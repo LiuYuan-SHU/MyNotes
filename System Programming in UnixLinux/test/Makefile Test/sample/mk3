@@ -1,0 +1,27 @@
+# ------------------------------ mk3 file ------------------------------
+CC = gcc					# define CC as gcc
+CFLAGS = -Wall				# define CFLAGS as flags to gcc
+OBJS = t.o mysum.o			# define Object code files
+INCLUDE = -Ipath			# define path as an INCLUDE directory
+
+all: myt install			# build all listed targets: myt, install
+
+myt: t.o mysum.o			# target: dependency list of .o files
+	$(CC) $(CFLAGS) -o myt $(OBJS) $(INCLUDE)
+	
+t.o:	t.c type.h			# t.o depend on t.c and type.h
+	gcc -c t.c
+mysum.o: mysum.c type.h		# mysum.o depend mysum.c and type.h
+	gcc -c mysum.c
+
+install: myt				#depend on myt: make will build myt first
+	echo install myt to /usr/local/bin
+	sudo mv myt /usr/local/bin/	#install myt to /usr/local/bin
+
+run: install				# depend on install, which depend on myt
+	echo run executable image myt
+	myt || /bin/true		# no make error 10 if main() return non-zero
+	
+clean:
+	rm -f *.o 2> /dev/null	# rm all *.o files
+	sudo rm -f /usr/local/bin/myt

@@ -1,0 +1,2 @@
+myt: type.h t.c mysum.c			# target: dependency list
+	gcc -o myt t.c mysum.c		# rule: line MUST begin with a tab

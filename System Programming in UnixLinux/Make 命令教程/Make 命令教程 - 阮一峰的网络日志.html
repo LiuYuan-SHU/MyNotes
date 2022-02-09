@@ -1,0 +1,2340 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0048)http://www.ruanyifeng.com/blog/2015/02/make.html -->
+<html xmlns="http://www.w3.org/1999/xhtml" id="sixapart-standard"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+<meta name="generator" content="Movable Type  5.2.2">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--link rel="stylesheet" href="http://www.ruanyifeng.com/blog/styles.css" type="text/css" /-->
+<link rel="start" href="https://www.ruanyifeng.com/blog/" title="Home">
+<link rel="alternate" type="application/atom+xml" title="Recent Entries" href="https://feeds.feedburner.com/ruanyifeng">
+<script src="./Make 命令教程 - 阮一峰的网络日志_files/hm.js"></script><script async="" src="./Make 命令教程 - 阮一峰的网络日志_files/analytics.js"></script><script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/mt.js"></script>
+<script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/advertisements.js"></script>
+<!--
+<rdf:RDF xmlns="http://web.resource.org/cc/"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Work rdf:about="http://www.ruanyifeng.com/blog/2012/11/require_js.html">
+<dc:title>Javascript模块化编程（三）：require.js的用法</dc:title>
+<dc:description>这个系列的第一部分和第二部分，介绍了Javascript模块原型和理论概念，今天介绍如何将它们用于实战。...</dc:description>
+<dc:creator>阮一峰</dc:creator>
+<dc:date>2012-11-07T18:06:27+08:00</dc:date>
+<license rdf:resource="http://creativecommons.org/licenses/by-nc-nd/3.0/" />
+</Work>
+<License rdf:about="http://creativecommons.org/licenses/by-nc-nd/3.0/">
+</License>
+</rdf:RDF>
+-->
+
+<style>
+body {
+  background-color: #f5f5d5;
+}
+
+#container::before {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: rgba(0,0,0,0.1);
+  text-align: center;
+  content: "本站显示不正常，可能因为您使用了广告拦截器。";
+}
+
+</style>
+<script>
+function loadjscssfile(filename, filetype){
+    if (filetype=="js"){ //if filename is a external JavaScript file
+        var fileref=document.createElement('script')
+        fileref.setAttribute("type","text/javascript")
+        fileref.setAttribute("src", filename)
+    }
+    else if (filetype=="css"){ //if filename is an external CSS file
+        var fileref=document.createElement("link")
+        fileref.setAttribute("rel", "stylesheet")
+        fileref.setAttribute("type", "text/css")
+        fileref.setAttribute("href", filename)
+    }
+    if (typeof fileref!="undefined")
+        document.getElementsByTagName("head")[0].appendChild(fileref)
+}
+//loadjscssfile("http://www.ruanyifeng.com/blog/styles.css", "css");
+loadjscssfile('/static/themes/theme_scrapbook/theme_scrapbook.min.css', "css");
+
+
+function checker() {
+  if (/mobile|android/i.test(navigator.userAgent)) return; 
+  window.comments && window.comments.setAttribute("style", "!important");
+  // var img = document.querySelector('img[src^="http://www.ruanyifeng.com/blog/images"]');
+  var img = document.querySelector('a > img[src*="wangbase.com/blogimg/asset/"]');
+  var isAdblocker = (typeof adblock === 'undefined');
+  if (
+    /*isAdblocker || */
+    (img && window.getComputedStyle(img).display === 'none') ||
+    (img && window.getComputedStyle(img.parentElement).display === 'none')
+  ){
+    var sponsor = document.querySelector('#main-content');
+    var prompt = document.createElement('div');
+    prompt.style = 'border: 1px solid #c6c6c6;border-radius: 4px;background-color: #f5f2f0;padding: 15px; font-size: 14px;';
+    prompt.innerHTML = '<p>您使用了广告拦截器，导致本站内容无法显示。</p><p>请将 www.ruanyifeng.com 加入白名单，解除广告屏蔽后，刷新页面。谢谢。</p>';
+    sponsor.parentNode.replaceChild(prompt, sponsor);
+    // document.querySelector('#main-content').innerHTML = '';
+  }
+}
+
+setTimeout(checker, 1000);
+</script><link rel="stylesheet" type="text/css" href="./Make 命令教程 - 阮一峰的网络日志_files/theme_scrapbook.min.css">
+
+    
+    <link rel="prev" href="https://www.ruanyifeng.com/blog/2015/02/flexible-javascript.html" title="JavaScript 有多灵活？">
+    <link rel="next" href="https://www.ruanyifeng.com/blog/2015/02/future-of-dom.html" title="也许，DOM 不是答案">
+    
+    <title>Make 命令教程 - 阮一峰的网络日志</title>
+</head>
+<body id="scrapbook" class="mt-entry-archive one-column">
+<script>
+if (/mobile/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent)) document.body.classList.add('mobile');
+
+/*
+window.addEventListener('load', function(event) {
+  setTimeout(function () {
+    hab('#sup-post-2');
+    hab('#cre-inner');
+  }, 1000);
+});
+*/
+</script>
+    <div id="container">
+        <div id="container-inner">
+
+            <div id="header">
+    <div id="header-inner">
+        <div id="header-content">
+
+
+            <div id="header-name">阮一峰的网络日志 <span id="site_location"> » <a href="https://www.ruanyifeng.com/blog/" accesskey="1">首页</a></span><span id="site_archive"> » <a href="https://www.ruanyifeng.com/blog/archives.html">档案</a></span>
+</div>
+
+<div id="google_search">
+<!-- SiteSearch Google -->
+<form action="https://www.baidu.com/s" target="_blank" method="get" id="cse-search-box">
+  <div>
+  <input type="text" size="20" name="origin" class="searchbox" id="sbi" value="">
+  <input type="hidden" name="wd" value="">
+  <!--input type="image" src="/static/themes/theme_scrapbook/images/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + ' inurl:www.ruanyifeng.com/blog'" /-->
+  <input type="image" src="./Make 命令教程 - 阮一峰的网络日志_files/top_search_submit.gif" class="searchbox_submit" value="" alt="搜索" name="sa" onclick="this.form.wd.value = this.form.origin.value + &#39; 阮一峰&#39;">
+</div>
+</form>
+
+<!-- SiteSearch Google -->
+</div>
+<div id="feed_icon">
+<a href="http://www.ruanyifeng.com/feed.html?utm_source=" title="订阅Feed">
+<!--img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABGdBTUEAAK/INwWK6QAAABl0RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXHJZTwAAAUzSURBVHjavFdbbFRVFF3nPjoz7dTWTittaW0jUDRAUqaNojyqREnEQKgfUj9MqqAmhqRt/OCD4CuY+Kckoh+aiGKC+gMJbdHoRysJ8dkhhmJLNdDKtJU+6GMK87j3Hs85d2Z6HzNtMYWb3Dn3NWftvfba+5xNYDl+e6Fkj6yqb/oDRbWq14vlPBLRKCITkxf0ROLt+hNjp1PPSRK4kA3vF1dXNRcWlyA2OQU9eos9opAkAiKxD+XkKO6t15aRWO7J/MgmAZU8MEgexgZHMX518Dh72sYMmVKShnxWuWHdHtxKIDIYTgMuDzgfmSOIQkYMpdUF8OY92Hytt4/jvkg47czzU16iQovM3QFwmNck+Yyduu7D6NA0Z6JR4THntFs9V4tWQg6Ui3s6MwKDncsFTnXKLJhDSeUK3AgPtyhccDzmVs999buRt/1Vm4i0od+hX7+MRG87jPGB/w1u8FPj9xEw7McVrnYuOCvtpjTth3J/nTg99c8LRhKhr6D3dTB5R24bXFwbMXBsyZzeoXaycEpJ95TB09AGX/NpqLVNtw8urnVzLvHjFNxiFqRy2OOHuqUVnue+ACkoWzo4O6lGzTmuHq6nPvY2m9rVqjrIK2rMEKxqyG5NPAKt+wjo0LklgfNxJkZMA3KJvqRUk3z5UFY3QH14P0h+WUY79HPvgv7VuSg4ZRGY1YgZgqXmORccF17sy2ehnf9AeO085K2HQFbtXBScj0LcpgF2cN+WV+DZ/LJQu6gD4R7oV7pBJwbSgtMvfiPoVp56DySwxm7EtkMs1WdAB7qzggsDJKQYsHucSkOudrkiCPWR/fA2nYCn8SNIK4NptSMyAu3sAdDRkIsJdfth0LzSrODUoPNZ4KI9SxJI5UHk7D4GdQfz2us31c7CoHMjRkKuDPHseCMrONVhNcDJwMJpKFVvg9L4OaTiNWm1x789KCqkrXhVBiEz0WYCT2nAzQAD1/vaETv1GrRfP4Vx5cfMNcDPwvP0h0DhanPym7OIf/+O67vcJ1/PCJ4KgdzaUP6Wz+dU+5yIL6fV+PsHGAOdwlPpvvUOyeeAVGyCdqkDNB6DPjsBSrnndfOGevOh3RhGItxvA+fX1CtbGFhgYUFkFMZPR6F1HnClHq8HyubWtJexX06CRmdt33hrd7nA7SFY4qoGpnYuOKcRykPPgDCBcsHx9Iv+fNL2PueBehCWUfYQIIMGLOCcOmXDXsh1+yCt35tUPfvzGFuSvzvoinXOxqa02qOhM6733nVP2MAdaej2XN11DPKjLZCD+yBvahGCo7JfTKAN9UD7s8Oe9zUNIhz8fWI8DG2k38WCFdxugANcXrvTVd1IEbuv3Jour7Hzn7jLMBNfKs7R3i67gRVrbeCOEDhinmWhAatsqdquM2XzHZINhK2cqTjHr/XZdVJUbgN3MWAVXKbSyg9jesRW2xP9di+lwrL5ojM3m2H/kG9hwcIA37c71W6wJdW2J2S5nrjYbq/t1AHAhJsKQeyfPvf6IMJgghPJhFZ4x0KlfLFvt22du45Au/A1SOlGc0P672XXwhLtOcM0kTTEMMd0qkVmMNXxMd/tsedUjInr4SQDgOfeXMSiN0FCL5WHah4L1qqYXPJOJlttd+a5M+YpcG5poLYKQ5f+6JJ4r8bbJYP47hq4r7QAs9PjYNhHJd4o8l5taiwuOpa7AS4XKqI/5NjJbTnaWK92nLdLuhQAJayRNMiygXPBeQN+Qbvu0zDc3y+aUzhbkGR73sI7ljvUnndx2q3t+X8CDAD66FtrIL864AAAAABJRU5ErkJggg==" alt="" style="border: 0pt none;" /-->
+<img src="./Make 命令教程 - 阮一峰的网络日志_files/bg2021072117.png" alt="" style="border: 0pt none;">
+</a></div>
+
+        </div>
+    </div>
+</div>
+
+
+
+            <div id="content">
+                <div id="content-inner">
+
+
+                    <div id="alpha">
+                        <div id="alpha-inner">
+
+
+                            <div id="entry-1827" class="entry-asset asset hentry">
+                                <div class="asset-header">
+<div class="asset-nav entry-nav">
+
+<div class="entry-location">
+<ul>
+<li>上一篇：<a href="https://www.ruanyifeng.com/blog/2015/02/flexible-javascript.html" title="JavaScript 有多灵活？">JavaScript&nbsp;</a></li>
+<li>下一篇：<a href="https://www.ruanyifeng.com/blog/2015/02/future-of-dom.html" title="也许，DOM 不是答案">也许，DOM&nbsp;不是答案</a></li>
+</ul>
+</div>
+
+
+    
+                                    <div class="entry-categories">
+                                        <p>分类<span class="delimiter">：</span></p>
+                                        <ul>
+                                            <li><a href="https://www.ruanyifeng.com/blog/developer/" rel="tag">开发者手册</a></li>
+                                        </ul>
+                                    </div>
+    
+
+
+                                            
+<div class="entry-location-mobile" style="float: right;">
+<ul>
+<li><a href="https://www.ruanyifeng.com/blog/2015/02/flexible-javascript.html" title="JavaScript 有多灵活？">⇐&nbsp;</a></li>
+<li><a href="https://www.ruanyifeng.com/blog/2015/02/future-of-dom.html" title="也许，DOM 不是答案">&nbsp;⇒</a></li>
+</ul>
+</div>
+
+</div>
+</div>
+
+                          
+<article class="hentry">
+                                    <h1 id="page-title" class="asset-name entry-title">Make 命令教程</h1>
+
+
+
+<div class="asset-meta">
+                                        
+
+                                            <p class="vcard author">作者： <a class="fn url" href="https://www.ruanyifeng.com/">阮一峰</a></p>
+                                    <p>日期： <a href="https://www.ruanyifeng.com/blog/2015/02/"><abbr class="published" title="2015-02-20T18:03:19+08:00">2015年2月20日</abbr></a></p>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+                                
+                                <div class="asset-content entry-content" id="main-content">
+
+                                    <!-- div class="asset-body" -->
+                                        <p>代码变成可执行文件，叫做<a href="https://www.ruanyifeng.com/blog/2014/11/compiler.html" target="_blank">编译</a>（compile）；先编译这个，还是先编译那个（即编译的安排），叫做<a href="https://en.wikipedia.org/wiki/Software_build" target="_blank">构建</a>（build）。</p>
+
+                                    <!-- /div -->
+
+
+                                    <!-- div id="more" class="asset-more" -->
+                                        <p><a href="https://en.wikipedia.org/wiki/Make_%28software%29" target="_blank">Make</a>是最常用的构建工具，诞生于1977年，主要用于C语言的项目。但是实际上 ，任何只要某个文件有变化，就要重新构建的项目，都可以用Make构建。</p>
+
+<p>本文介绍Make命令的用法，从简单的讲起，不需要任何基础，只要会使用命令行，就能看懂。我的参考资料主要是Isaac Schlueter的<a href="https://gist.github.com/isaacs/62a2d1825d04437c6f08" target="_blank">《Makefile文件教程》</a>和<a href="https://www.gnu.org/software/make/manual/make.html" target="_blank">《GNU Make手册》</a>。</p>
+
+<p><img src="./Make 命令教程 - 阮一峰的网络日志_files/bg2015022001.jpg" alt="" title=""></p>
+
+<p>（题图：摄于博兹贾阿达岛，土耳其，2013年7月）</p>
+
+<h2>一、Make的概念</h2>
+
+<p>Make这个词，英语的意思是"制作"。Make命令直接用了这个意思，就是要做出某个文件。比如，要做出文件a.txt，就可以执行下面的命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make a<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>但是，如果你真的输入这条命令，它并不会起作用。因为Make命令本身并不知道，如何做出a.txt，需要有人告诉它，如何调用其他命令完成这个目标。</p>
+
+<p>比如，假设文件 a.txt 依赖于 b.txt 和 c.txt ，是后面两个文件连接（cat命令）的产物。那么，make 需要知道下面的规则。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+a<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> b<span class="token punctuation">.</span>txt c<span class="token punctuation">.</span>txt
+    cat b<span class="token punctuation">.</span>txt c<span class="token punctuation">.</span>txt <span class="token operator">&gt;</span> a<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>也就是说，make a.txt 这条命令的背后，实际上分成两步：第一步，确认 b.txt 和 c.txt 必须已经存在，第二步使用 cat 命令 将这个两个文件合并，输出为新文件。</p>
+
+<p>像这样的规则，都写在一个叫做Makefile的文件中，Make命令依赖这个文件进行构建。Makefile文件也可以写为makefile， 或者用命令行参数指定为其他文件名。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make <span class="token operator">-</span>f rules<span class="token punctuation">.</span>txt
+<span class="token comment" spellcheck="true"># 或者
+</span>$ make <span class="token operator">--</span>file<span class="token operator">=</span>rules<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>上面代码指定make命令依据rules.txt文件中的规则，进行构建。</p>
+
+<p>总之，make只是一个根据指定的Shell命令进行构建的工具。它的规则很简单，你规定要构建哪个文件、它依赖哪些源文件，当那些文件有变动时，如何重新构建它。</p>
+
+<h2>二、Makefile文件的格式</h2>
+
+<p>构建规则都写在Makefile文件里面，要学会如何Make命令，就必须学会如何编写Makefile文件。</p>
+
+<h3>2.1 概述</h3>
+
+<p>Makefile文件由一系列规则（rules）构成。每条规则的形式如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token operator">&lt;</span>target<span class="token operator">&gt;</span> <span class="token punctuation">:</span> <span class="token operator">&lt;</span>prerequisites<span class="token operator">&gt;</span> 
+<span class="token punctuation">[</span>tab<span class="token punctuation">]</span>  <span class="token operator">&lt;</span>commands<span class="token operator">&gt;</span>
+</code></pre></blockquote>
+
+<p>上面第一行冒号前面的部分，叫做"目标"（target），冒号后面的部分叫做"前置条件"（prerequisites）；第二行必须由一个tab键起首，后面跟着"命令"（commands）。</p>
+
+<p>"目标"是必需的，不可省略；"前置条件"和"命令"都是可选的，但是两者之中必须至少存在一个。</p>
+
+<p>每条规则就明确两件事：构建目标的前置条件是什么，以及如何构建。下面就详细讲解，每条规则的这三个组成部分。</p>
+
+<h3>2.2 目标（target）</h3>
+
+<p>一个目标（target）就构成一条规则。目标通常是文件名，指明Make命令所要构建的对象，比如上文的 a.txt 。目标可以是一个文件名，也可以是多个文件名，之间用空格分隔。</p>
+
+<p>除了文件名，目标还可以是某个操作的名字，这称为"伪目标"（phony target）。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+clean<span class="token punctuation">:</span>
+      rm <span class="token operator">*</span><span class="token punctuation">.</span>o
+</code></pre></blockquote>
+
+<p>上面代码的目标是clean，它不是文件名，而是一个操作的名字，属于"伪目标 "，作用是删除对象文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make  clean
+</code></pre></blockquote>
+
+<p>但是，如果当前目录中，正好有一个文件叫做clean，那么这个命令不会执行。因为Make发现clean文件已经存在，就认为没有必要重新构建了，就不会执行指定的rm命令。</p>
+
+<p>为了避免这种情况，可以明确声明clean是"伪目标"，写法如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token punctuation">.</span>PHONY<span class="token punctuation">:</span> clean
+clean<span class="token punctuation">:</span>
+        rm <span class="token operator">*</span><span class="token punctuation">.</span>o temp
+</code></pre></blockquote>
+
+<p>声明clean是"伪目标"之后，make就不会去检查是否存在一个叫做clean的文件，而是每次运行都执行对应的命令。像.PHONY这样的内置目标名还有不少，可以查看<a href="https://www.gnu.org/software/make/manual/html_node/Special-Targets.html#Special-Targets" target="_blank">手册</a>。</p>
+
+<p>如果Make命令运行时没有指定目标，默认会执行Makefile文件的第一个目标。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make
+</code></pre></blockquote>
+
+<p>上面代码执行Makefile文件的第一个目标。</p>
+
+<h3>2.3 前置条件（prerequisites）</h3>
+
+<p>前置条件通常是一组文件名，之间用空格分隔。它指定了"目标"是否重新构建的判断标准：只要有一个前置文件不存在，或者有过更新（前置文件的last-modification时间戳比目标的时间戳新），"目标"就需要重新构建。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+result<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> source<span class="token punctuation">.</span>txt
+    cp source<span class="token punctuation">.</span>txt result<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>上面代码中，构建 result.txt 的前置条件是 source.txt 。如果当前目录中，source.txt 已经存在，那么<code>make result.txt</code>可以正常运行，否则必须再写一条规则，来生成 source.txt 。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+source<span class="token punctuation">.</span>txt<span class="token punctuation">:</span>
+    <span class="token keyword">echo</span> <span class="token string">"this is the source"</span> <span class="token operator">&gt;</span> source<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>上面代码中，source.txt后面没有前置条件，就意味着它跟其他文件都无关，只要这个文件还不存在，每次调用<code>make source.txt</code>，它都会生成。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make result<span class="token punctuation">.</span>txt
+$ make result<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p>上面命令连续执行两次<code>make result.txt</code>。第一次执行会先新建 source.txt，然后再新建 result.txt。第二次执行，Make发现 source.txt 没有变动（时间戳晚于 result.txt），就不会执行任何操作，result.txt  也不会重新生成。</p>
+
+<p>如果需要生成多个文件，往往采用下面的写法。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+source<span class="token punctuation">:</span> file1 file2 file3
+</code></pre></blockquote>
+
+<p>上面代码中，source 是一个伪目标，只有三个前置文件，没有任何对应的命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make source
+</code></pre></blockquote>
+
+<p>执行<code>make source</code>命令后，就会一次性生成 file1，file2，file3 三个文件。这比下面的写法要方便很多。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make file1
+$ make file2
+$ make file3
+</code></pre></blockquote>
+
+<h3>2.4 命令（commands）</h3>
+
+<p>命令（commands）表示如何更新目标文件，由一行或多行的Shell命令组成。它是构建"目标"的具体指令，它的运行结果通常就是生成目标文件。</p>
+
+<p>每行命令之前必须有一个tab键。如果想用其他键，可以用内置变量.RECIPEPREFIX声明。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token punctuation">.</span>RECIPEPREFIX <span class="token operator">=</span> <span class="token operator">&gt;</span>
+all<span class="token punctuation">:</span>
+<span class="token operator">&gt;</span> <span class="token keyword">echo</span> Hello<span class="token punctuation">,</span> world
+</code></pre></blockquote>
+
+<p>上面代码用.RECIPEPREFIX指定，大于号（&gt;）替代tab键。所以，每一行命令的起首变成了大于号，而不是tab键。</p>
+
+<p>需要注意的是，每行命令在一个单独的shell中执行。这些Shell之间没有继承关系。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+var<span class="token operator">-</span>lost<span class="token punctuation">:</span>
+    export foo<span class="token operator">=</span>bar
+    <span class="token keyword">echo</span> <span class="token string">"foo=[$<span class="token property">$foo</span>]"</span>
+</code></pre></blockquote>
+
+<p>上面代码执行后（<code>make var-lost</code>），取不到foo的值。因为两行命令在两个不同的进程执行。一个解决办法是将两行命令写在一行，中间用分号分隔。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+var<span class="token operator">-</span>kept<span class="token punctuation">:</span>
+    export foo<span class="token operator">=</span>bar<span class="token punctuation">;</span> <span class="token keyword">echo</span> <span class="token string">"foo=[$<span class="token property">$foo</span>]"</span>
+</code></pre></blockquote>
+
+<p>另一个解决办法是在换行符前加反斜杠转义。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+var<span class="token operator">-</span>kept<span class="token punctuation">:</span>
+    export foo<span class="token operator">=</span>bar<span class="token punctuation">;</span> \
+    <span class="token keyword">echo</span> <span class="token string">"foo=[$<span class="token property">$foo</span>]"</span>
+</code></pre></blockquote>
+
+<p>最后一个方法是加上<code>.ONESHELL:</code>命令。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token punctuation">.</span>ONESHELL<span class="token punctuation">:</span>
+var<span class="token operator">-</span>kept<span class="token punctuation">:</span>
+    export foo<span class="token operator">=</span>bar<span class="token punctuation">;</span> 
+    <span class="token keyword">echo</span> <span class="token string">"foo=[$<span class="token property">$foo</span>]"</span>
+</code></pre></blockquote>
+
+<h2>三、Makefile文件的语法</h2>
+
+<h3>3.1 注释</h3>
+
+<p>井号（#）在Makefile中表示注释。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token comment" spellcheck="true"># 这是注释
+</span>result<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> source<span class="token punctuation">.</span>txt
+    <span class="token comment" spellcheck="true"># 这是注释
+</span>    cp source<span class="token punctuation">.</span>txt result<span class="token punctuation">.</span>txt <span class="token comment" spellcheck="true"># 这也是注释
+</span></code></pre></blockquote>
+
+<h3>3.2 回声（echoing）</h3>
+
+<p>正常情况下，make会打印每条命令，然后再执行，这就叫做回声（echoing）。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+test<span class="token punctuation">:</span>
+    <span class="token comment" spellcheck="true"># 这是测试
+</span></code></pre></blockquote>
+
+<p>执行上面的规则，会得到下面的结果。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$ make test
+<span class="token comment" spellcheck="true"># 这是测试
+</span></code></pre></blockquote>
+
+<p>在命令的前面加上@，就可以关闭回声。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+test<span class="token punctuation">:</span>
+    @<span class="token comment" spellcheck="true"># 这是测试
+</span></code></pre></blockquote>
+
+<p>现在再执行<code>make test</code>，就不会有任何输出。</p>
+
+<p>由于在构建过程中，需要了解当前在执行哪条命令，所以通常只在注释和纯显示的echo命令前面加上@。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+test<span class="token punctuation">:</span>
+    @<span class="token comment" spellcheck="true"># 这是测试
+</span>    @<span class="token keyword">echo</span> TODO
+</code></pre></blockquote>
+
+<h3>3.3 通配符</h3>
+
+<p>通配符（wildcard）用来指定一组符合条件的文件名。Makefile 的通配符与 Bash 一致，主要有星号（*）、问号（？）和 [...] 。比如， *.o 表示所有后缀名为o的文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+clean<span class="token punctuation">:</span>
+        rm <span class="token operator">-</span>f <span class="token operator">*</span><span class="token punctuation">.</span>o
+</code></pre></blockquote>  
+
+<h3>3.4 模式匹配</h3>
+
+<p>Make命令允许对文件名，进行类似正则运算的匹配，主要用到的匹配符是%。比如，假定当前目录下有 f1.c 和 f2.c 两个源码文件，需要将它们编译为对应的对象文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token operator">%</span><span class="token punctuation">.</span>o<span class="token punctuation">:</span> <span class="token operator">%</span><span class="token punctuation">.</span>c
+</code></pre></blockquote>
+
+<p>等同于下面的写法。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+f1<span class="token punctuation">.</span>o<span class="token punctuation">:</span> f1<span class="token punctuation">.</span>c
+f2<span class="token punctuation">.</span>o<span class="token punctuation">:</span> f2<span class="token punctuation">.</span>c
+</code></pre></blockquote>
+
+<p>使用匹配符%，可以将大量同类型的文件，只用一条规则就完成构建。</p>
+
+<h3>3.5 变量和赋值符</h3>
+
+<p>Makefile 允许使用等号自定义变量。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+txt <span class="token operator">=</span> Hello World
+test<span class="token punctuation">:</span>
+    @<span class="token keyword">echo</span> $<span class="token punctuation">(</span>txt<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>上面代码中，变量 txt 等于 Hello World。调用时，变量需要放在 $( ) 之中。</p>
+
+<p>调用Shell变量，需要在美元符号前，再加一个美元符号，这是因为Make命令会对美元符号转义。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+test<span class="token punctuation">:</span>
+    @<span class="token keyword">echo</span> $<span class="token property">$HOME</span>
+</code></pre></blockquote>
+
+<p>有时，变量的值可能指向另一个变量。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+v1 <span class="token operator">=</span> $<span class="token punctuation">(</span>v2<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>上面代码中，变量 v1 的值是另一个变量 v2。这时会产生一个问题，v1 的值到底在定义时扩展（静态扩展），还是在运行时扩展（动态扩展）？如果 v2 的值是动态的，这两种扩展方式的结果可能会差异很大。</p>
+
+<p>为了解决类似问题，Makefile一共提供了四个赋值运算符 （=、:=、？=、+=），它们的区别请看<a href="https://stackoverflow.com/questions/448910/makefile-variable-assignment" target="_blank">StackOverflow</a>。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+VARIABLE <span class="token operator">=</span> value
+<span class="token comment" spellcheck="true"># 在执行时扩展，允许递归扩展。
+</span>
+VARIABLE <span class="token punctuation">:</span><span class="token operator">=</span> value
+<span class="token comment" spellcheck="true"># 在定义时扩展。
+</span>
+VARIABLE <span class="token operator">?</span><span class="token operator">=</span> value
+<span class="token comment" spellcheck="true"># 只有在该变量为空时才设置值。
+</span>
+VARIABLE <span class="token operator">+</span><span class="token operator">=</span> value
+<span class="token comment" spellcheck="true"># 将值追加到变量的尾端。
+</span>
+</code></pre></blockquote>
+
+<h3>3.6 内置变量（Implicit Variables）</h3>
+
+<p>Make命令提供一系列内置变量，比如，$(CC) 指向当前使用的编译器，$(MAKE) 指向当前使用的Make工具。这主要是为了跨平台的兼容性，详细的内置变量清单见<a href="https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html" target="_blank">手册</a>。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+output<span class="token punctuation">:</span>
+    $<span class="token punctuation">(</span>CC<span class="token punctuation">)</span> <span class="token operator">-</span>o output input<span class="token punctuation">.</span>c
+</code></pre></blockquote>
+
+<h3>3.7 自动变量（Automatic Variables）</h3>
+
+<p>Make命令还提供一些自动变量，它们的值与当前规则有关。主要有以下几个。</p>
+
+<p><strong>（1）$@</strong></p>
+
+<p>$@指代当前目标，就是Make命令当前构建的那个目标。比如，<code>make foo</code>的 $@ 就指代foo。 </p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+a<span class="token punctuation">.</span>txt b<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> 
+    touch <span class="token property">$@</span>
+</code></pre></blockquote>
+
+<p>等同于下面的写法。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+a<span class="token punctuation">.</span>txt<span class="token punctuation">:</span>
+    touch a<span class="token punctuation">.</span>txt
+b<span class="token punctuation">.</span>txt<span class="token punctuation">:</span>
+    touch b<span class="token punctuation">.</span>txt
+</code></pre></blockquote>
+
+<p><strong>（2）$&lt;</strong></p>
+
+<p>$&lt; 指代第一个前置条件。比如，规则为 t: p1 p2，那么$&lt; 就指代p1。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+a<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> b<span class="token punctuation">.</span>txt c<span class="token punctuation">.</span>txt
+    cp $<span class="token operator">&lt;</span> <span class="token property">$@</span> 
+</code></pre></blockquote>
+
+<p>等同于下面的写法。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+a<span class="token punctuation">.</span>txt<span class="token punctuation">:</span> b<span class="token punctuation">.</span>txt c<span class="token punctuation">.</span>txt
+    cp b<span class="token punctuation">.</span>txt a<span class="token punctuation">.</span>txt 
+</code></pre></blockquote>
+
+<p><strong>（3）$?</strong></p>
+
+<p>$? 指代比目标更新的所有前置条件，之间以空格分隔。比如，规则为 t: p1 p2，其中 p2 的时间戳比 t 新，$?就指代p2。</p>
+
+<p><strong>（4）$^</strong></p>
+
+<p>$^ 指代所有前置条件，之间以空格分隔。比如，规则为 t: p1 p2，那么 $^ 就指代 p1 p2 。</p>
+
+<p><strong>（5）$*</strong></p>
+
+<p>$*  指代匹配符 % 匹配的部分， 比如% 匹配 f1.txt 中的f1 ，$* 就表示 f1。</p>
+
+<p><strong>（6）$(@D) 和 $(@F)</strong></p>
+
+<p>$(@D) 和 $(@F) 分别指向 $@ 的目录名和文件名。比如，$@是 src/input.c，那么$(@D) 的值为 src ，$(@F)  的值为 input.c。</p>
+
+<p><strong>（7）$(&lt;D) 和 $(&lt;F)</strong></p>
+
+<p>$(&lt;D) 和 $(&lt;F)  分别指向 $&lt; 的目录名和文件名。 </p>
+
+<p>所有的自动变量清单，请看<a href="https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html" target="_blank">手册</a>。下面是自动变量的一个例子。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+dest<span class="token operator">/</span><span class="token operator">%</span><span class="token punctuation">.</span>txt<span class="token punctuation">:</span> src<span class="token operator">/</span><span class="token operator">%</span><span class="token punctuation">.</span>txt
+    @<span class="token punctuation">[</span> <span class="token operator">-</span>d dest <span class="token punctuation">]</span> <span class="token operator">||</span> mkdir dest
+    cp $<span class="token operator">&lt;</span> <span class="token property">$@</span>
+</code></pre></blockquote>  
+
+<p>上面代码将 src 目录下的 txt 文件，拷贝到 dest 目录下。首先判断 dest 目录是否存在，如果不存在就新建，然后，$&lt; 指代前置文件（src/%.txt）， $@ 指代目标文件（dest/%.txt）。</p>
+
+<h3>3.8 判断和循环</h3>
+
+<p>Makefile使用 Bash 语法，完成判断和循环。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+ifeq <span class="token punctuation">(</span>$<span class="token punctuation">(</span>CC<span class="token punctuation">)</span><span class="token punctuation">,</span>gcc<span class="token punctuation">)</span>
+  libs<span class="token operator">=</span>$<span class="token punctuation">(</span>libs_for_gcc<span class="token punctuation">)</span>
+<span class="token keyword">else</span>
+  libs<span class="token operator">=</span>$<span class="token punctuation">(</span>normal_libs<span class="token punctuation">)</span>
+endif
+</code></pre></blockquote>
+
+<p>上面代码判断当前编译器是否 gcc ，然后指定不同的库文件。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+LIST <span class="token operator">=</span> one two three
+all<span class="token punctuation">:</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> $<span class="token punctuation">(</span>LIST<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token keyword">do</span> \
+        <span class="token keyword">echo</span> $<span class="token property">$i</span><span class="token punctuation">;</span> \
+    <span class="token keyword">done</span>
+
+<span class="token comment" spellcheck="true"># 等同于
+</span>
+all<span class="token punctuation">:</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> one two three<span class="token punctuation">;</span> <span class="token keyword">do</span> \
+        <span class="token keyword">echo</span> <span class="token property">$i</span><span class="token punctuation">;</span> \
+    <span class="token keyword">done</span>
+
+</code></pre></blockquote>
+
+<p>上面代码的运行结果。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+one
+two
+three
+</code></pre></blockquote>
+
+<h3>3.9 函数</h3>
+
+<p>Makefile 还可以使用函数，格式如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$<span class="token punctuation">(</span><span class="token keyword">function</span> arguments<span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true"># 或者
+</span><span class="token property">${function arguments}</span>
+</code></pre></blockquote>
+
+<p>Makefile提供了许多<a href="https://www.gnu.org/software/make/manual/html_node/Functions.html" target="_blank">内置函数</a>，可供调用。下面是几个常用的内置函数。</p>
+
+<p><strong>（1）shell 函数</strong></p>
+
+<p>shell 函数用来执行 shell 命令</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+srcfiles <span class="token punctuation">:</span><span class="token operator">=</span> $<span class="token punctuation">(</span>shell <span class="token keyword">echo</span> src<span class="token operator">/</span><span class="token punctuation">{</span><span class="token number">00</span><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token number">99</span><span class="token punctuation">}</span><span class="token punctuation">.</span>txt<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p><strong>（2）wildcard 函数</strong></p>
+
+<p>wildcard 函数用来在 Makefile 中，替换 Bash 的通配符。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+srcfiles <span class="token punctuation">:</span><span class="token operator">=</span> $<span class="token punctuation">(</span>wildcard src<span class="token operator">/</span><span class="token operator">*</span><span class="token punctuation">.</span>txt<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p><strong>（3）subst 函数</strong></p>
+
+<p>subst 函数用来文本替换，格式如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$<span class="token punctuation">(</span>subst from<span class="token punctuation">,</span>to<span class="token punctuation">,</span>text<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>下面的例子将字符串"feet on the street"替换成"fEEt on the strEEt"。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$<span class="token punctuation">(</span>subst ee<span class="token punctuation">,</span>EE<span class="token punctuation">,</span>feet on the street<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>下面是一个稍微复杂的例子。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+comma<span class="token punctuation">:</span><span class="token operator">=</span> <span class="token punctuation">,</span>
+empty<span class="token punctuation">:</span><span class="token operator">=</span>
+<span class="token comment" spellcheck="true"># space变量用两个空变量作为标识符，当中是一个空格
+</span>space<span class="token punctuation">:</span><span class="token operator">=</span> $<span class="token punctuation">(</span>empty<span class="token punctuation">)</span> $<span class="token punctuation">(</span>empty<span class="token punctuation">)</span>
+foo<span class="token punctuation">:</span><span class="token operator">=</span> a b c
+bar<span class="token punctuation">:</span><span class="token operator">=</span> $<span class="token punctuation">(</span>subst $<span class="token punctuation">(</span>space<span class="token punctuation">)</span><span class="token punctuation">,</span>$<span class="token punctuation">(</span>comma<span class="token punctuation">)</span><span class="token punctuation">,</span>$<span class="token punctuation">(</span>foo<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token comment" spellcheck="true"># bar is now `a,b,c'.
+</span></code></pre></blockquote>
+
+<p><strong>（4）patsubst函数</strong></p>
+
+<p>patsubst 函数用于模式匹配的替换，格式如下。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$<span class="token punctuation">(</span>patsubst pattern<span class="token punctuation">,</span>replacement<span class="token punctuation">,</span>text<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>下面的例子将文件名"x.c.c bar.c"，替换成"x.c.o bar.o"。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+$<span class="token punctuation">(</span>patsubst <span class="token operator">%</span><span class="token punctuation">.</span>c<span class="token punctuation">,</span><span class="token operator">%</span><span class="token punctuation">.</span>o<span class="token punctuation">,</span>x<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c bar<span class="token punctuation">.</span>c<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p><strong>（5）替换后缀名</strong></p>
+
+<p>替换后缀名函数的写法是：变量名 + 冒号 + 后缀名替换规则。它实际上patsubst函数的一种简写形式。</p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+min<span class="token punctuation">:</span> $<span class="token punctuation">(</span>OUTPUT<span class="token punctuation">:</span><span class="token punctuation">.</span>js<span class="token operator">=</span><span class="token punctuation">.</span>min<span class="token punctuation">.</span>js<span class="token punctuation">)</span>
+</code></pre></blockquote>
+
+<p>上面代码的意思是，将变量OUTPUT中的后缀名 .js 全部替换成 .min.js 。</p>
+
+<h2>四、Makefile 的实例</h2>
+
+<p><strong>（1）执行多个目标</strong></p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+<span class="token punctuation">.</span>PHONY<span class="token punctuation">:</span> cleanall cleanobj cleandiff
+
+cleanall <span class="token punctuation">:</span> cleanobj cleandiff
+        rm program
+
+cleanobj <span class="token punctuation">:</span>
+        rm <span class="token operator">*</span><span class="token punctuation">.</span>o
+
+cleandiff <span class="token punctuation">:</span>
+        rm <span class="token operator">*</span><span class="token punctuation">.</span>diff
+</code></pre></blockquote>
+
+<p>上面代码可以调用不同目标，删除不同后缀名的文件，也可以调用一个目标（cleanall），删除所有指定类型的文件。</p>
+
+<p><strong>（2）编译C语言项目</strong></p>
+
+<blockquote><pre class=" language-bash"><code class=" language-bash">
+edit <span class="token punctuation">:</span> main<span class="token punctuation">.</span>o kbd<span class="token punctuation">.</span>o command<span class="token punctuation">.</span>o display<span class="token punctuation">.</span>o 
+    cc <span class="token operator">-</span>o edit main<span class="token punctuation">.</span>o kbd<span class="token punctuation">.</span>o command<span class="token punctuation">.</span>o display<span class="token punctuation">.</span>o
+
+main<span class="token punctuation">.</span>o <span class="token punctuation">:</span> main<span class="token punctuation">.</span>c defs<span class="token punctuation">.</span>h
+    cc <span class="token operator">-</span>c main<span class="token punctuation">.</span>c
+kbd<span class="token punctuation">.</span>o <span class="token punctuation">:</span> kbd<span class="token punctuation">.</span>c defs<span class="token punctuation">.</span>h command<span class="token punctuation">.</span>h
+    cc <span class="token operator">-</span>c kbd<span class="token punctuation">.</span>c
+command<span class="token punctuation">.</span>o <span class="token punctuation">:</span> command<span class="token punctuation">.</span>c defs<span class="token punctuation">.</span>h command<span class="token punctuation">.</span>h
+    cc <span class="token operator">-</span>c command<span class="token punctuation">.</span>c
+display<span class="token punctuation">.</span>o <span class="token punctuation">:</span> display<span class="token punctuation">.</span>c defs<span class="token punctuation">.</span>h
+    cc <span class="token operator">-</span>c display<span class="token punctuation">.</span>c
+
+clean <span class="token punctuation">:</span>
+     rm edit main<span class="token punctuation">.</span>o kbd<span class="token punctuation">.</span>o command<span class="token punctuation">.</span>o display<span class="token punctuation">.</span>o
+
+<span class="token punctuation">.</span>PHONY<span class="token punctuation">:</span> edit clean
+</code></pre></blockquote>
+
+<p>今天，Make命令的介绍就到这里。下一篇文章我会介绍，<a href="https://www.ruanyifeng.com/blog/2015/03/build-website-with-make.html" target="_blank">如何用 Make 来构建  Node.js 项目</a>。</p>
+
+<p>（完）</p>
+
+                                    <!-- /div -->
+
+                                </div>
+    <script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/newwindow.js"></script>
+                                <div class="asset-footer">
+
+<h3>文档信息</h3>
+<ul>
+<li>版权声明：自由转载-非商用-非衍生-保持署名（<a href="https://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh">创意共享3.0许可证</a>）</li>
+<li>发表日期： <abbr class="published" title="2015-02-20T18:03:19+08:00">2015年2月20日</abbr></li>
+
+</ul>
+                                </div>
+</article>
+                            </div>
+
+
+
+  <div style="display: inline-block ! important;width: 100%;">
+  
+  </div>
+
+
+
+<div id="related_entries">
+<h2>相关文章</h2>
+<ul>
+
+<li><strong>2021.09.07: <a href="https://www.ruanyifeng.com/blog/2021/09/c-language-tutorial.html">《C 语言入门教程》发布了</a></strong>
+
+                           <div class="entry-body">
+                              向大家报告，我写了一本《C 语言入门教程》，已经上线了，欢迎访问。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2021.08.26: <a href="https://www.ruanyifeng.com/blog/2021/08/best-note-taking-software-for-programmers.html">最适合程序员的笔记软件</a></strong>
+
+                           <div class="entry-body">
+                              程序员的笔记软件，应该满足下面几个条件。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2021.05.10: <a href="https://www.ruanyifeng.com/blog/2021/05/scaling-problem.html">软件工程的最大难题</a></strong>
+
+                           <div class="entry-body">
+                              一、引言
+
+大学有一门课程《软件工程》，研究如何组织和管理软件项目。
+
+                           </div>
+
+</li>
+
+ 
+<li><strong>2020.12.13: <a href="https://www.ruanyifeng.com/blog/2020/12/ssh-tutorial.html">《SSH 入门教程》发布了</a></strong>
+
+                           <div class="entry-body">
+                              SSH 是登录 Linux 服务器的必备工具，只要你在做互联网开发，多多少少都会用到它。
+
+                           </div>
+
+</li>
+
+ 
+</ul>
+</div>
+
+
+
+                    
+
+                    <div id="comments" class="comments" style="!important">
+
+
+    
+    
+        
+    <h2 class="comments-header">留言（39条）</h2>
+
+    <div id="comments-content" class="comments-content" style="clear: left;">
+        
+        <div id="comment-348145" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">迷路</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348145">
+            <p>新年快乐～～</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 20, 2015  6:32 PM">2015年2月20日 18:32</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348145">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用迷路的这条留言" onclick="return CommentQuote(&#39;comment-quote-348145&#39;,&#39;迷路&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348155" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Jianqing</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348155">
+            <p>羊年快乐</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 20, 2015 11:16 PM">2015年2月20日 23:16</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348155">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Jianqing的这条留言" onclick="return CommentQuote(&#39;comment-quote-348155&#39;,&#39;Jianqing&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348156" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">wtbhk</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348156">
+            <p>用了这么久总算明白原理了</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 21, 2015 12:55 AM">2015年2月21日 00:55</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348156">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用wtbhk的这条留言" onclick="return CommentQuote(&#39;comment-quote-348156&#39;,&#39;wtbhk&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348241" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">jamlee</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348241">
+            <p>关于模式匹配有个误解区，%.o:%.c并不是直接去匹配文件目录里的文件,而是匹配上下文的东西:<br>
+%.o:%.c<br>
+ gcc main.c -o main.o</p>
+
+<p>main.o:main.c</p>
+
+<p>当我们make的时候 会执行 gcc main.c -o main.o</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 26, 2015 11:10 AM">2015年2月26日 11:10</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348241">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用jamlee的这条留言" onclick="return CommentQuote(&#39;comment-quote-348241&#39;,&#39;jamlee&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348261" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Lane</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348261">
+            <p>前排留名, 慢慢看.</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 27, 2015 11:06 AM">2015年2月27日 11:06</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348261">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Lane的这条留言" onclick="return CommentQuote(&#39;comment-quote-348261&#39;,&#39;Lane&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348270" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">阿哲</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348270">
+            <p>赞，学习了~</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 27, 2015  7:16 PM">2015年2月27日 19:16</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348270">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用阿哲的这条留言" onclick="return CommentQuote(&#39;comment-quote-348270&#39;,&#39;阿哲&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348282" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Mitsu_Right</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348282">
+            <p>阮老师的文章类型越来越丰富了，学习了。新年快乐！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 28, 2015 12:07 PM">2015年2月28日 12:07</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348282">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Mitsu_Right的这条留言" onclick="return CommentQuote(&#39;comment-quote-348282&#39;,&#39;Mitsu_Right&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348380" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">lcmust</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348380">
+            <p>提供了很多学习内容，都非常不错，我会常来学习的。谢谢</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March  6, 2015 11:47 PM">2015年3月 6日 23:47</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348380">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用lcmust的这条留言" onclick="return CommentQuote(&#39;comment-quote-348380&#39;,&#39;lcmust&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348893" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">zyk7676</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348893">
+            <p>阮老师,我想做一个博客,要做到您的网站这种效果需要什么技术呢</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  1, 2015  5:24 PM">2015年4月 1日 17:24</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348893">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用zyk7676的这条留言" onclick="return CommentQuote(&#39;comment-quote-348893&#39;,&#39;zyk7676&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-348947" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">casy</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-348947">
+            <p>all:<br>
+    for i in one two three; do \<br>
+        echo $i; \<br>
+    done</p>
+
+<p>这里echo后面是不是少了一个$符号</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April  7, 2015 10:46 AM">2015年4月 7日 10:46</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-348947">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用casy的这条留言" onclick="return CommentQuote(&#39;comment-quote-348947&#39;,&#39;casy&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-349109" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">neo</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-349109">
+            <p>没错，详见： <a href="https://www.gnu.org/software/make/manual/html_node/Variables-in-Recipes.html" rel="nofollow">https://www.gnu.org/software/make/manual/html_node/Variables-in-Recipes.html</a></p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 15, 2015  4:18 AM">2015年4月15日 04:18</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-349109">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用neo的这条留言" onclick="return CommentQuote(&#39;comment-quote-349109&#39;,&#39;neo&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-349493" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">七弦</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-349493">
+            <p>写得太好了！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May  8, 2015 11:26 AM">2015年5月 8日 11:26</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-349493">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用七弦的这条留言" onclick="return CommentQuote(&#39;comment-quote-349493&#39;,&#39;七弦&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-349606" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Mr.Clovers</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-349606">
+            <p>内容对我很有帮助，谢谢阮老师。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 12, 2015  8:05 PM">2015年5月12日 20:05</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-349606">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Mr.Clovers的这条留言" onclick="return CommentQuote(&#39;comment-quote-349606&#39;,&#39;Mr.Clovers&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-349620" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">hobmg</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-349620">
+            <p>太棒了太棒了太棒了太棒了</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 13, 2015 11:57 AM">2015年5月13日 11:57</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-349620">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用hobmg的这条留言" onclick="return CommentQuote(&#39;comment-quote-349620&#39;,&#39;hobmg&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-349647" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">JQ</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-349647">
+            <p>dest/%.txt: src/%.txt<br>
+    @[ -d dest ] || mkdir dest<br>
+    cp $
+
+</p><p><br>
+我执行的时候报错啊，什么原因呢，阮老师<br>
+make: *** No targets.  Stop.</p><p></p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 14, 2015  1:19 AM">2015年5月14日 01:19</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-349647">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用JQ的这条留言" onclick="return CommentQuote(&#39;comment-quote-349647&#39;,&#39;JQ&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-350300" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">martintin</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-350300">
+            <p>超级有用，灰常感谢！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="June 12, 2015  7:54 PM">2015年6月12日 19:54</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-350300">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用martintin的这条留言" onclick="return CommentQuote(&#39;comment-quote-350300&#39;,&#39;martintin&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-350539" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">XueSeason</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-350539">
+            <p>"前置条件"和"命令"都是可选的，但是两者之中必须至少存在一个。 这句话应该有误，经测试，只有目标没有前置条件和命令也是可以的。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July  1, 2015 11:08 PM">2015年7月 1日 23:08</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-350539">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用XueSeason的这条留言" onclick="return CommentQuote(&#39;comment-quote-350539&#39;,&#39;XueSeason&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-351306" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">谢国强</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-351306">
+            <p>非常有用，受益菲浅</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August 18, 2015  4:36 PM">2015年8月18日 16:36</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-351306">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用谢国强的这条留言" onclick="return CommentQuote(&#39;comment-quote-351306&#39;,&#39;谢国强&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-351307" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">靳阳</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-351307">
+            <p>2.3节中有如下的内容(下一行双引号里是网页的原文)<br>
+"Make发现 source.txt 没有变动（时间戳晚于 result.txt）"</p>
+
+<p>但是我觉得其实应该是 "（时间戳早于 result.txt)"</p>
+
+<p>如有错误, 敬请指正.</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August 18, 2015  4:51 PM">2015年8月18日 16:51</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-351307">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用靳阳的这条留言" onclick="return CommentQuote(&#39;comment-quote-351307&#39;,&#39;靳阳&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-355208" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">BugRepairMan</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-355208">
+            <blockquote>
+<pre>引用JQ的发言：</pre>
+
+<p>dest/%.txt: src/%.txt<br>
+@[ -d dest ] || mkdir dest<br>
+cp $</p>
+
+<p><br>
+我执行的时候报错啊，什么原因呢，阮老师<br>
+make: *** No targets.Stop.</p>
+
+</blockquote>
+
+<p>这个例子的解释是不对的，并不是把src/下的所有文件拷贝到dest/下，而是只拷贝指定的文件，因此需要加上需要拷贝的文件名，例如：</p>
+
+<p>all: dest/a.txt</p>
+
+<p>同时还要确保src/下面有a.txt，否则也会报错。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 23, 2016  8:53 PM">2016年3月23日 20:53</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-355208">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用BugRepairMan的这条留言" onclick="return CommentQuote(&#39;comment-quote-355208&#39;,&#39;BugRepairMan&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-355333" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">zollor</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-355333">
+            <p>博主你好，我试过下面的makefile，但是报错：</p>
+
+<p>.RECIPEPREFIX = &gt;<br>
+all:<br>
+&gt; echo Hello, world</p>
+
+<p>报错如下：<br>
+makefile:3: *** missing separator.  Stop.</p>
+
+<p>请问下这是怎么回事？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 30, 2016  1:43 PM">2016年3月30日 13:43</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-355333">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用zollor的这条留言" onclick="return CommentQuote(&#39;comment-quote-355333&#39;,&#39;zollor&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-360527" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">lewis liu</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-360527">
+            <p>真棒！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July 11, 2016  6:50 PM">2016年7月11日 18:50</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-360527">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用lewis liu的这条留言" onclick="return CommentQuote(&#39;comment-quote-360527&#39;,&#39;lewis liu&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-362943" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">陈青松</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-362943">
+            <p>edit : main.o kbd.o command.o display.o <br>
+    cc -o edit main.o kbd.o command.o display.o</p>
+
+<p>这里第二行有个 edit 是什么意思呢？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August 22, 2016  4:10 PM">2016年8月22日 16:10</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-362943">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用陈青松的这条留言" onclick="return CommentQuote(&#39;comment-quote-362943&#39;,&#39;陈青松&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-363443" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">shuaihanhungry</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-363443">
+            <p>除了实例部分，其它部分写得挺好的。谢谢。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August 31, 2016 12:15 AM">2016年8月31日 00:15</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-363443">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用shuaihanhungry的这条留言" onclick="return CommentQuote(&#39;comment-quote-363443&#39;,&#39;shuaihanhungry&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-363641" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">陈青松你好</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-363641">
+            <blockquote>
+<pre>引用陈青松的发言：</pre>
+
+<p>edit : main.o kbd.o command.o display.o <br>
+cc -o edit main.o kbd.o command.o display.o</p>
+
+<p>这里第二行有个 edit 是什么意思呢？</p>
+
+</blockquote>
+这个edit是编译器cc的参数,用cc生成文件名为edit的文件
+
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September  2, 2016  3:52 PM">2016年9月 2日 15:52</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-363641">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用陈青松你好的这条留言" onclick="return CommentQuote(&#39;comment-quote-363641&#39;,&#39;陈青松你好&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-364700" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">shawnelee88</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-364700">
+            <p>all:<br>
+    for i in one two three; do \<br>
+        echo $i; \<br>
+    done</p>
+
+<p>那个 $i应该是$$i</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="September 18, 2016  1:01 AM">2016年9月18日 01:01</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-364700">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用shawnelee88的这条留言" onclick="return CommentQuote(&#39;comment-quote-364700&#39;,&#39;shawnelee88&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-365669" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Jixuan Cheng</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-365669">
+            <p>嗯，感觉思路好清晰。多谢多谢。看的明白许多。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="October  4, 2016 11:16 PM">2016年10月 4日 23:16</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-365669">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Jixuan Cheng的这条留言" onclick="return CommentQuote(&#39;comment-quote-365669&#39;,&#39;Jixuan Cheng&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-379251" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">陈东</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-379251">
+            <p>经典，思路清晰，多谢，多谢，还是要多敲代码，这样能明白很多。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="August  4, 2017  5:48 PM">2017年8月 4日 17:48</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-379251">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用陈东的这条留言" onclick="return CommentQuote(&#39;comment-quote-379251&#39;,&#39;陈东&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388928" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">dkplus</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388928">
+            <p>多谢阮老师，对比起枯燥的官方文档，能有通俗易懂的文字带新手了解是非常好的，希望老师不要因为博客被攻击的是而淡出,加油！</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 16, 2018  7:20 PM">2018年5月16日 19:20</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-388928">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用dkplus的这条留言" onclick="return CommentQuote(&#39;comment-quote-388928&#39;,&#39;dkplus&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-388932" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">Christophe</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-388932">
+            <p><b>阮老师加油，不能让坏人得逞，在阮老师这里学到了很多有用的知识，很感谢。</b></p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="May 16, 2018  8:58 PM">2018年5月16日 20:58</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-388932">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用Christophe的这条留言" onclick="return CommentQuote(&#39;comment-quote-388932&#39;,&#39;Christophe&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-408300" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">liker</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-408300">
+            <p>The .RECIPEPREFIX is only supported since 3.82</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 19, 2019  3:37 PM">2019年2月19日 15:37</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-408300">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用liker的这条留言" onclick="return CommentQuote(&#39;comment-quote-408300&#39;,&#39;liker&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-409961" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">dkvirus</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-409961">
+            <p>&gt; 第二次执行，Make发现 source.txt 没有变动（时间戳晚于 result.txt）</p>
+
+<p>应该是 “时间戳早于 result.txt”。因为是先有的 source.txt，再有的 result.txt。如果 source.txt 的时间戳晚于 result.txt，这才说明 source.txt 有改动吧~</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="March 16, 2019  9:50 PM">2019年3月16日 21:50</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-409961">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用dkvirus的这条留言" onclick="return CommentQuote(&#39;comment-quote-409961&#39;,&#39;dkvirus&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-412485" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">田鹏明</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-412485">
+            <p>我到目前为止看到的最好的讲解Makefile的教学</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July 30, 2019 11:07 AM">2019年7月30日 11:07</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-412485">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用田鹏明的这条留言" onclick="return CommentQuote(&#39;comment-quote-412485&#39;,&#39;田鹏明&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-414384" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">xxlyu</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-414384">
+            <p>rm program 是什么意思？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="November  6, 2019 11:42 PM">2019年11月 6日 23:42</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-414384">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用xxlyu的这条留言" onclick="return CommentQuote(&#39;comment-quote-414384&#39;,&#39;xxlyu&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-416388" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">qiansen1386</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-416388">
+            <p>谨受教!老师总结的太好了。短短一篇胜过区区一周无头苍蝇似的苦读。</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="February 25, 2020  1:43 PM">2020年2月25日 13:43</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-416388">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用qiansen1386的这条留言" onclick="return CommentQuote(&#39;comment-quote-416388&#39;,&#39;qiansen1386&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-417681" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">whincwu</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-417681">
+            <blockquote>
+<pre>引用JQ的发言：</pre>
+
+<p>dest/%.txt: src/%.txt<br>
+@[ -d dest ] || mkdir dest<br>
+cp $</p>
+
+<p><br>
+我执行的时候报错啊，什么原因呢，阮老师<br>
+make: *** No targets.Stop.</p>
+
+</blockquote>
+
+<p>规则下面的每条语句必须以 [tab] 键开头，你复制粘贴的这段是空白符，替换成 [tab] 键就可以了。<br>
+</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 11, 2020 12:36 AM">2020年4月11日 00:36</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-417681">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用whincwu的这条留言" onclick="return CommentQuote(&#39;comment-quote-417681&#39;,&#39;whincwu&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-417940" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">斯坦尼斯拉夫司机</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-417940">
+            <p>请问@[ -d dest ]是什么语法？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 23, 2020  2:33 PM">2020年4月23日 14:33</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-417940">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用斯坦尼斯拉夫司机的这条留言" onclick="return CommentQuote(&#39;comment-quote-417940&#39;,&#39;斯坦尼斯拉夫司机&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-417941" class="comment">
+    <div class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">斯坦尼斯拉夫司机</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-417941">
+            <blockquote>
+<pre>引用斯坦尼斯拉夫司机的发言：</pre>
+
+<p>请问@[ -d dest ]是什么语法？</p>
+
+</blockquote>
+
+<p>明白了，@关闭回显，[ -d dest ]等价于test -d dest</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="April 23, 2020  2:50 PM">2020年4月23日 14:50</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-417941">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用斯坦尼斯拉夫司机的这条留言" onclick="return CommentQuote(&#39;comment-quote-417941&#39;,&#39;斯坦尼斯拉夫司机&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    
+        
+        <div id="comment-427750" class="comment">
+    <div id="comment-last" class="inner">
+        <div class="comment-header">
+            <div class="asset-meta">
+<p>
+                <span class="byline">
+                    
+
+                    <span class="vcard author">lmtoo</span>
+
+ 说：
+                </span>
+</p>
+            </div>
+        </div>
+        <div class="comment-content" id="comment-quote-427750">
+            <p>《Makefile文件教程》这个链接打不开了，原英文标题是啥？</p>
+        </div>
+<div class="comment-footer">
+<div class="comment-footer-inner">
+<p>
+                   <abbr class="published" title="July  5, 2021  9:15 AM">2021年7月 5日 09:15</abbr>
+ | <a href="https://www.ruanyifeng.com/blog/2015/02/make.html#comment-427750">#</a>
+ | <a href="http://www.ruanyifeng.com/blog/2015/02/make.html#comment-text" title="引用lmtoo的这条留言" onclick="return CommentQuote(&#39;comment-quote-427750&#39;,&#39;lmtoo&#39;);">引用</a>
+</p>
+</div>
+</div>
+    </div>
+</div>
+        
+    </div>
+        
+    
+
+
+    
+    
+    <div class="comments-open" id="comments-open">
+        <h2 class="comments-open-header">我要发表看法</h2>
+        <div class="comments-open-content">
+
+        
+            <div id="comment-greeting"></div>
+
+            <form method="post" action="https://www.ruanyifeng.com/cgi-bin/mtos/mt-comments.cgi" name="comments_form" id="comments-form" onsubmit="return pleaseWait();">
+                <input type="hidden" name="static" value="1">
+                <input type="hidden" name="entry_id" value="1827">
+                <input type="hidden" name="__lang" value="en">
+                <input type="hidden" name="parent_id" value="" id="comment-parent-id">
+                <input type="hidden" name="armor" value="1">
+                <input type="hidden" name="preview" value="">
+                <input type="hidden" name="sid" value="">
+                <div id="comments-open-data">
+            <div id="comments-open-text">
+                    <p><label for="comment-text">您的留言
+                    （HTML标签部分可用）</label></p>
+                    <p><textarea id="comment-text" name="text" rows="10" cols="50"></textarea></p>
+                </div>
+                    <div id="comment-form-name">
+                        <p><label for="comment-author">您的大名：</label></p>
+                        <p><input id="comment-author" name="author" size="30" value="">  <span class="hint"> «-必填</span></p>
+                    </div>
+                    <div id="comment-form-email">
+                        <p><label for="comment-email">电子邮件：</label></p>
+                        <p><input id="comment-email" name="email" size="30" value="">  <span class="hint"> «-必填，不公开</span></p>
+                    </div>
+                    <div id="comment-form-url">
+                        <p><label for="comment-url">个人网址：</label></p>
+                        <p><input id="comment-url" name="url" size="30" value="">  <span class="hint"> «-我信任你，不会填写广告链接</span></p>
+                    </div>
+                    <div id="comment-form-remember-me">
+                        <p>
+                        <label for="comment-bake-cookie">记住个人信息？</label><input type="checkbox" id="comment-bake-cookie" name="bakecookie" onclick="!this.checked?forgetMe(document.comments_form):rememberMe(document.comments_form)" value="1" accesskey="r"></p>
+                    </div>
+                </div>
+                    <div id="comment-form-reply" style="display:none">
+                    <input type="checkbox" id="comment-reply" name="comment_reply" value="" onclick="mtSetCommentParentID()">
+                    <label for="comment-reply" id="comment-reply-label"></label>
+                </div>
+                <div id="comments-open-captcha"></div>
+                <div id="comments-open-footer">
+<div id="wait" style="display:none;">
+<p><strong>正在发表您的评论，请稍候</strong></p>
+<p>
+<input type="text" name="percent" size="3" style="font-family:Arial; color:black;text-align:center; border-width:medium; border-style:none;">           
+<input type="text" name="chart" size="46" style="font-family:Arial;font-weight:bolder; color:black; padding:0px; border-style:none;">
+</p>
+</div>
+
+                    <p><input type="submit" accesskey="s" name="post" id="comment-submit" value="发表">  <span class="hint"> «- 点击按钮</span></p>
+                </div>
+            </form>
+
+
+        </div>
+    </div>
+
+    
+
+
+</div>
+
+
+
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        <script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/prism.js"></script>
+        <script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/checker.js"></script> 
+            <div id="footer">
+<div id="footer-inner">
+  <div id="footer-content">
+
+      
+<!--
+      <section> 
+     </section>
+  <p><a title="Instagram" target="_blank" href="http://instagram.com/ruanyf">Instagram</a></p>
+       <p><a title="订阅" href="https://app.feedblitz.com/f/f.fbz?Sub=348868" target="_blank">邮件订阅</a></p>
+  
+       <h2>Feed</h2>
+       <p><a title="FeedBurner" href="http://feeds.feedburner.com/ruanyifeng" target="_blank">FeedBurner</a></p>
+       <p><a title="atom.xml" href="http://www.ruanyifeng.com/blog/atom.xml" target="_blank">atom.xml</a></p>
+     
+      <p>支付宝：<a title="支付宝" href="alipays://platformapi/startapp?appId=20000067&url=http%3A%2F%2Fwww.ruanyifeng.com%2Fblog" target="_blank">yifeng.ruan@gmail.com</a></p>
+-->
+
+     <section>
+<!--
+       <h2>授权方式</h2>
+       <p><a title="许可证" href="http://creativecommons.org/licenses/by-nc-nd/3.0/deed.zh" target="_blank">自由转载-非商用-非衍生-保持署名</a></p>
+       <h2>微信公号</h2>
+       <h2>社交帐号</h2>
+       <h2>联系方式</h2>
+     -->
+       <p><img src="./Make 命令教程 - 阮一峰的网络日志_files/bg2020013101.jpg" alt="微信扫描"></p>
+       <p>
+         <a title="微博" href="https://weibo.com/ruanyf" target="_blank">Weibo</a> | 
+         <a title="Twitter" target="_blank" href="https://twitter.com/ruanyf">Twitter</a> |
+         <a title="GitHub" target="_blank" href="https://github.com/ruanyf">GitHub</a>
+       </p>
+     
+     <p>Email: <a title="电子邮件" href="mailto:yifeng.ruan@gmail.com" target="_blank">yifeng.ruan@gmail.com</a></p>
+     </section>
+  
+  
+
+
+  </div>
+</div>
+</div>
+<script>
+function insertLine(e,t){for(var n=0;n<t;n++)e.parentNode.insertBefore(document.createElement("p"),e)}function getImg(){if(!window["main-content"])return!1;for(var e,t=Array.prototype.slice.call(window["main-content"].getElementsByTagName("img")),n=0;n<t.length;n++){if("display: none !important;"===(e=t[n]).getAttribute("style"))return e;if(n===t.length-1)return!1}}function toObjectUrl(e,t){return fetch(e).then(e=>e.blob()).then(e=>{t(URL.createObjectURL(e))})}function toDataURL(e,t){var n=new XMLHttpRequest;n.open("get",e),n.responseType="blob",n.onload=function(){var e=new FileReader;e.onload=function(){t(this.result)},e.readAsDataURL(n.response)},n.send()}setTimeout(function(){var e=getImg();e&&(insertLine(e.parentNode,2),toObjectUrl(e.src,function(t){var n=document.createElement("p"),r=document.createElement("img");r.src=t,n.appendChild(r),e.parentNode.parentNode.insertBefore(n,e.parentNode)}))},3e3);
+</script>                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-46829782-1', 'ruanyifeng.com');
+  ga('send', 'pageview');
+
+</script>
+
+<script type="text/javascript" src="./Make 命令教程 - 阮一峰的网络日志_files/stats.js"></script>
+<script>
+var supportImg = document.querySelector('#support-img');
+
+if (supportImg && _hmt) {
+  _hmt.push(['_trackEvent', 'banner', 'load']);
+  supportImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'banner', 'click']);
+  }, false);
+}
+
+var homepageImg = document.querySelector('#homepage_sponsor');
+if (homepageImg && _hmt) {
+  _hmt.push(['_trackEvent', 'homepage-banner', 'load']);
+  homepageImg.addEventListener('click', function () {
+    _hmt.push(['_trackEvent', 'homepage-banner', 'click']);
+  }, false);
+}
+</script>
+
+
+
+        </div>
+    </div>
+
+</body></html>

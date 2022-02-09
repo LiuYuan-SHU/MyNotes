@@ -1,0 +1,11 @@
+CC = gcc			# define CC as gcc
+CFLAGS = -Wall		# define CFLAGS as flags to gcc
+OBJS = t.o mysum.o	# define Object code files
+INCLUDE = -Ipath	# define path as an INCLUDE directory
+t.o:		t.c type.h		# t.o depend on t.c and type.h
+	gcc -c t.c
+mysum.o:	mysum.c type.h	# mysum.o depend type.h
+	gcc -c mysum.c
+
+myt: type.h $(OBJS)	# traget: dependency: type.h and .o files
+	$(CC) $(CFLAGS) -o t $(OBJS) $(INCLUDE)
