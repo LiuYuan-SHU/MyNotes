@@ -215,13 +215,13 @@ ram --git commit--> local[本地库 - 历史版本]
     1. `git checkout [被合并分支名]`
     2. `git merge [分支名]`
 
-5. 解决冲突
+#### 冲突
 
-1. 分支的表现
+1.冲突的表现
 
     ![image-20220209010618364](Git&GitHub.assets/image-20220209010618364.png)
 
-2. 冲突的解决
+2. 冲突的解决<a name='冲突的解决'></a>
 
     1. 编辑文件，删除特殊符号
 
@@ -232,6 +232,11 @@ ram --git commit--> local[本地库 - 历史版本]
     4. `git commit -m "日志信息"`
 
         ==注意：此时`commit`不可以带文件名==
+
+***解决冲突的要点***
+
+- 如果不是基于GitHub远程库的最新版所做的修改，不能推送，必须先拉取
+- 拉取下来以后如果进入冲突状态，则按照[“分支冲突解决”](#冲突的解决)操作解决即可
 
 ### GitHub
 
@@ -271,6 +276,14 @@ ram --git commit--> local[本地库 - 历史版本]
 2. 创建origin远程地址别名
 3. 初始化本地库
 
+#### 拉取
+
+> fetch能够先拉到本地，确定没问题再merge
+
+- `pull` = `fetch` + `merge`
+- `git fetch [远程库地址别名] [远程分支名]`
+- `git merge [远程库地址别名/远程分支名]`
+
 ### 本地库和远程库
 
 #### 团队内部
@@ -289,12 +302,17 @@ ram --git commit--> local[本地库 - 历史版本]
 
     `git merge origin/master`
 
-******
+#### 团队协作
 
-***拉取***
+1. 协作方从网页`fork`代码到自己的库
+2. 协作方`clone`到本地库，进行修改，然后`push`
+3. 协作方`pull request`，等待审核
+4. 审核方确定没有问题后在网页`merge`，然后`pull`到本地进行下一步操作
 
-> fetch能够先拉到本地，确定没问题再merge
+### SSH登录
 
-- `pull` = `fetch` + `merge`
-- `git fetch [远程库地址别名] [远程分支名]
-- `git merge [远程库地址别名/远程分支名]`
+1. 在根目录创建`.ssh`文件夹
+2. 在`.ssh`文件夹中输入`ssh-keygen -t rsa -C [账户邮箱]`
+3. 一路回车，按照默认走
+3. 将获得的秘钥复制到`settings`->`SSH and GPG keys`->`new SSH key`
+3. 之后`git remote add [别名] [SSH]`，使用这个就不需要账号密码
