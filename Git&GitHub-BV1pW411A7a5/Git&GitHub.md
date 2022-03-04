@@ -219,7 +219,7 @@ ram --git commit--> local[本地库 - 历史版本]
 
 1.冲突的表现
 
-    ![image-20220209010618364](Git&GitHub.assets/image-20220209010618364.png)
+![image-20220209010618364](Git&GitHub.assets/image-20220209010618364.png)
 
 2. 冲突的解决<a name='冲突的解决'></a>
 
@@ -283,6 +283,8 @@ ram --git commit--> local[本地库 - 历史版本]
 - `pull` = `fetch` + `merge`
 - `git fetch [远程库地址别名] [远程分支名]`
 - `git merge [远程库地址别名/远程分支名]`
+
+#### [下载指定文件](https://minhaskamal.github.io/DownGit/#/home)
 
 ### 本地库和远程库
 
