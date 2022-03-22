@@ -202,6 +202,21 @@ Multiset & Multimap ==> Ordinary
 2. 将包含的头文件放在命名空间的上面
 3. 在用到变量的时候再去声明，并且与其他代码之间少一个tab，方便寻找
 
+## 分配器的测试
+
+***GNU额外附加的allocator：***
+
+1. `<ext\array_allocator.h>`
+2. `<ext\mt_allocator.h>`，多线程allocator
+   `list<string, __gnu_cxx::__mt_alloc<stirng> >`
+3. `<ext\debug_allocator.h>`，debug用allocator
+4. `<ext\pool_allocator.h>`，优化过的allocator，详见[后文](#pool_allocator)
+   `__gnu_cxx::__pool_alloc`
+5. `<ext\bitmap_allocator.h>`，哈希表allocator
+   `__gnu_cxx:bitmap_allocator`
+6. `<ext\malloc_allocator.h>`
+7. `<ext\new_allocator.h>`
+
 ## 体系结构与内核分析
 
 ### ***OOP(Object-Oriented Programming) vs. GP(Generic Programming)***
@@ -446,3 +461,84 @@ public:
    - 所有的容器需要内存的时候，都来向allocators申请空间
    - 容器的元素大小一般都会被拓展到8的倍数，如果容器为元素申请的空间大小不符合任何的链表，allocators就会使用`malloc`向操作系统申请一大块空间，将申请到的空间切分成小块，并且把这个空间用单向链表连接起来。这样的小块就不带有cookie。
    - 同时，因为在malloc申请到的内存中，最上层和最下层都有cookie，每一个cookie 4个字节。所以每一个元素都有8个字节的多余空间
+
+##### G4.9下的allocator
+
+> 纵使如前文所述，`alloc`是非常有效的设计，G4.9并没有使用这个版本，而是使用了`allocator`
+
+###### G4.9 STL对allocator的使用
+
+```cpp
+template <typename _Tp, typename _Alloc = std::allocator<_Tp> >
+class vector : protected _Vector_base<_Tp, _Alloc>
+{
+	// ...
+};
+```
+
+###### G4.9 STL对allocator的实现
+
+```cpp
+template <typename _Tp>
+class new_allocator
+{
+	// ...
+	pointer allocate(size_type __n, const void* = 0)
+	{
+		if (__n > this->max_size())
+			std::__throw_bad_alloc();
+		return static_cast<_Tp*>(::operator new(__n * sizeof(_Tp)));
+	}
+
+	void deallocate(pointer __p, size_type)
+	{
+		::operator delete(__p);
+	}
+	
+	// ...
+};
+
+// in <bits/c++allocator.h>
+#define __allocator_base __gnu_cxx::new_allocator
+
+
+template<typename _Tp>
+class allocator : public __allocator_base<_Tp>
+{
+	// ...
+};
+```
+
+###### 结论
+
+> G4.9 抛弃了已经设计好的很棒的设计，而重回了原来的版本
+
+<a name="pool_allocator"></a>
+
+G2.9版本的`alloc`仍然还在。G4.9所附的标准库，有许多extention allocators，其中`__pool_alloc`就是G2.9的`alloc`
+
+```cpp
+class __pool_alloc_base
+{
+protected:
+	enum { _S_align = 8 };
+	enum { _S_max_bytes = 128 };
+	enum { _S_free_list_size = (size_t)_S_max_bytes / (size_t)_S_align };
+
+	union _Obj
+	{
+		union _Obj*	_M_free_list_link;
+		char		_M_client_data[1];		// The client sees this
+	};
+
+	static _Obj* volatile	_S_free_list[_S_free_list_size];
+
+	// ...
+};
+
+template<typename _Tp>
+class __pool_alloc : private __pool_alloc_base
+{
+	// ...
+};
+```
