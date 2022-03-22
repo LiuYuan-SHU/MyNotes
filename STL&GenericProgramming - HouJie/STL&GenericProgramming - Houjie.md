@@ -202,3 +202,223 @@ Multiset & Multimap ==> Ordinary
 2. 将包含的头文件放在命名空间的上面
 3. 在用到变量的时候再去声明，并且与其他代码之间少一个tab，方便寻找
 
+## 体系结构与内核分析
+
+### ***OOP(Object-Oriented Programming) vs. GP(Generic Programming)***
+
+***采用GP的优势：***
+
+- Containers和Algorithms团队可以各自开发，其间以Iterator沟通即可
+- Algorithms通过Iterators确定操作范围，并通过Iteratos取用Container元素
+
+### 技术基础 - 操作符重载&模板泛化、全特化、偏特化
+
+> 书目推荐：《*C++ Templates - The Complete Guide*》
+
+#### 特化
+
+> 对一个模板的完整特化
+
+```cpp
+// 泛化
+template <class Key> struct hash {  };
+
+// 特化
+typedef __STL_TEMPLATE_NULL template<>;
+
+__STL_TEMPLATE_NULL struct hash<char>
+{
+	size_t operator() (char x) const { return x; }
+};
+
+```
+
+#### 偏特化（*Partial Specialization*）
+
+##### 对模板参数个数的局部特化
+
+```cpp
+// 泛化
+template <class T, class Alloc = alloc>
+class vector
+{
+	// ...
+};
+
+// 偏特化
+// 特化其中一个，剩下一个模板保留
+template <class Alloc>
+class vector<bool, Alloc>
+{
+	// ...
+}
+```
+
+##### 对模板参数范围的局部特化
+
+```cpp
+// generalization
+template <class Iterator>
+struct iterator_traits
+{
+	typedef typename Iterator::iterator_category	iterator_category;
+	typedef typename Iterator::value_type			value_type;
+	typedef typename Iterator::difference_type		difference_type;
+	typedef typename Iterator::pointer				pointer;
+	typedef typename Iterator::reference			reference;
+};
+
+// partial specialization
+// 对指针进行偏特化
+template <class T>
+struct iterator_traits<T*>
+{ 
+	typedef random_access_iterator_tag	iterator_category;
+	typedef T							value_type;
+	typedef ptrdiff_t					difference_type;
+	typedef T*							pointer;
+	typedef T&							reference;
+};
+
+template <class T>
+struct iterator_traits<const T*>
+{ 
+	typedef random_access_iterator_tag	iterator_category;
+	typedef T							value_type;
+	typedef ptrdiff_t					difference_type;
+	typedef const T*					pointer;
+	typedef const T&					reference;
+};
+
+```
+
+### 分配器 - *allocator*
+
+#### 先谈`operator new()`和`malloc()`
+
+> 所有的C++ `new` 最终都会回到`operator new()`
+>
+> 所有的申请空间的代码，最终都会回到`malloc()`函数 ***memory allocation***
+> 所有的释放空间的代码，最终都会回到`free()`函数
+
+![malloc申请到的内存空间](STL&GenericProgramming - Houjie.assets/malloc().png)
+
+<center>malloc申请到的内存空间样式</center>
+
+1. 用户所申请的空间是浅蓝色`size`的部分
+2. 灰色的部分是debug mode下添加的
+3. 红色的部分是cookie
+4. 调整后添加边界pad，也就是绿色的部分
+
+***malloc提供给我们的空间超过我们申请的空间，所申请的空间越大，多余部分所占的内容越少。因此，申请空间<F9>越大，对内存的浪费越少***
+
+#### 分配器`allocators`
+
+##### VC6 version
+
+***VC6 STL对allocator的使用***
+
+```cpp
+template <class _Ty, class _A = allocator<_Ty> >
+class vector
+{
+//...
+};
+```
+
+***VC6 STL对allocator的实现***
+
+```cpp
+#ifndef _FARQ
+	#define _FARQ
+	#define _PDFT	ptrdiff_t
+	#define _SIZT	size_t
+#endif
+	#define _POINTER_X(T, A)	T_FARQ *
+	#define _REFERENCE_X(T, A)	T_FARQ &
+
+template<class _Ty> inline
+_Ty _FARQ *_Allocate(_PDFT _N, _Ty _FARQ *)
+{
+	if (_N < 0) _N = 0;
+	return ((_Ty _FARQ*)operator new((_SIZT)_N * sizeof (_Ty)));
+}
+
+template<class _Ty>
+{
+public:
+	typedef _SIZT size_type;
+	typedef _PDFT difference_type;
+	typedef _Ty _FARQ *pointer;
+	typedef _Ty value_type;
+	// =========================================================
+	// allocator最重要的两个函数
+	pointer allocate(size_type _N, const void *)
+	{
+		return (_Allocate((difference_type)_N, (pointer)0));
+	}
+	void deallocate(void _FARQ *_P, size_type)
+	{
+		operator delete(_P);
+	}
+	// =========================================================
+};
+```
+
+具体使用：[Allocators测试](./testCode/1_test_allocator_VC6.cpp)
+
+- `allocate()`函数的第二个参数没有类型，传参仅仅是为了知道想要**申请什么样的数据**
+- `deallocate()`函数要求传入当初申请的数据的个数。这是不合理的，没有人会去记住当初申请了多少个元素，我们只会知道指针。但是如果是容器来使用，一切就会变得非常方便
+
+##### BC5 version
+
+***BC5 STL对allocator的使用***
+
+```cpp
+// in <stdcomp.h>
+#define _RWSTD_COMPLEX_DEFAULT(a) = a
+
+template <class T, class Allocator = _RWSTD_COMPLEX_DEFAULT(allocator<T>) >
+class vector ...
+
+// 等价于
+template <class T, class Allocator = allocator<T> >
+class vector ...
+```
+
+***BC5 STL对allocator的实现***
+
+> BC++的allocator只是以::operator new和::operator delete完成allocate()和deallocate()，没有任何特殊设计
+
+```cpp
+// in <memory.stl>
+template <class T>
+class allocator
+{
+public:
+	typedef size_t		size_type;
+	typedef ptrdiff_t	difference_type;
+	typedef T*			pointer;
+	typedef T&			reference;
+
+	pointer allocate(size_type n, allocator<void>::const_pointer = 0)
+	{
+		pointer tmp = 
+			_RWSTD_STATIC_CAST(pointer, (::operator new(_RWSTD_STATIC_CAST(size_t, (n * sizeof(value_type))))));
+		_RWSTD_THROW_NO_MSG(tmp == 0, bad_alloc);
+		return tmp;
+	}
+	void deallocate(pointer p, size_type)
+	{
+		::operator delete(p);
+	}
+}
+```
+
+具体使用：[Allocators测试](./testCode/1_test_allocator_BC5.cpp)
+
+##### 总结
+
+不管是VC还是BC，allocator最后还是回到malloc，这就决定了，如果我们放入容器的元素很小，会导致额外开销很大，令人困扰
+
+
