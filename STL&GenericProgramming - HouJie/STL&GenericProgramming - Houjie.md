@@ -301,6 +301,8 @@ struct iterator_traits<const T*>
 > 所有的申请空间的代码，最终都会回到`malloc()`函数 ***memory allocation***
 > 所有的释放空间的代码，最终都会回到`free()`函数
 
+<a name="malloc申请到的内存空间"></a>
+
 ![malloc申请到的内存空间](STL&GenericProgramming - Houjie.assets/malloc().png)
 
 <center>malloc申请到的内存空间样式</center>
@@ -417,8 +419,30 @@ public:
 
 具体使用：[Allocators测试](./testCode/1_test_allocator_BC5.cpp)
 
-##### 总结
+##### 小结
 
-不管是VC还是BC，allocator最后还是回到malloc，这就决定了，如果我们放入容器的元素很小，会导致额外开销很大，令人困扰
+1. 不管是VC, BC还是GNU C，allocator最后还是回到malloc，这就决定了，如果我们放入容器的元素很小，会导致额外开销很大，令人不能忍受
+2. 不要单独使用Allocator
+   > G++ <defalloc.h>中有这样的注释：
+   > DO NO USE THIS FILE unless you have an old container implementation that requires an allocator with the HP-style interface.
+   > SGI STL uses a different allocator interface. SGI-style allocator are not parametrized with respect to the object type; they traffic in void* pointers.
+   > THIS FILE IS NOT INCLUDED BY ANY OTHER HEAD FILE
+3. 由此可见，并没有使用这个Allocator，而是有更好的设计的分配器。也就是
+   `template <class T, class Alloc = alloc> vector` 中的`alloc`
 
+#### `alloc` of G2.9
 
+![`alloc` for G2.9](./STL&GenericProgramming - Houjie.assets/G2.9_alloc.png)
+
+<center><b><i>G2.9下的`alloc'</i></b></center>
+
+> 根本思想： ***尽量减少malloc的次数，进而减少malloc带来的额外开销***
+
+回顾[malloc申请到的内存空间样式](#malloc申请到的内存空间)，cookie中记录的是申请到的整个空间的大小，因此在归还指针的时候不需要知道空间的大小, free会去查看cookie中的数据，从而决定需要回收多大的空间
+   - 考虑到容器：容器的每个元素的大小是固定的，这样就不需要记录每个元素的大小。所以，在容器的应用情况下，可以不需要cookie，尽量减少malloc次数
+   - 具体的实现方法：
+      1. 设计16条链表，每一条链表负责某一种特定大小的区块，用链表穿起来
+	  2. #n负责`(n + 1) * 8`个字节大小的元素
+   - 所有的容器需要内存的时候，都来向allocators申请空间
+   - 容器的元素大小一般都会被拓展到8的倍数，如果容器为元素申请的空间大小不符合任何的链表，allocators就会使用`malloc`向操作系统申请一大块空间，将申请到的空间切分成小块，并且把这个空间用单向链表连接起来。这样的小块就不带有cookie。
+   - 同时，因为在malloc申请到的内存中，最上层和最下层都有cookie，每一个cookie 4个字节。所以每一个元素都有8个字节的多余空间
