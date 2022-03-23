@@ -1,0 +1,3 @@
+~/AppData/Local/DOSBox/dosbox-0.74-3.conf
+
+mount C E:/Liuyuan/GitHubRepositories/1_MyNotes/Assembly
