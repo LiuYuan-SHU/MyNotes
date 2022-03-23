@@ -542,3 +542,18 @@ class __pool_alloc : private __pool_alloc_base
 	// ...
 };
 ```
+## 容器的深度探索
+
+### 容器之间的实现关系与分类
+
+![容器，结构与分类](./STL&GenericProgramming - Houjie.assets/容器，结构与分类.png)
+
+<center><b><i>sizeof()中的大小指的是容器自己的大小，与其中装的元素的大小没有关系</i></b></center>
+
+### 深度探索list
+
+> 最简单的容器是array，但是list是最具代表性的容器
+
+![容器list](./STL&GenericProgramming - Houjie.assets/list.png)
+
+
