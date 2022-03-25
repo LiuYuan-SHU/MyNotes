@@ -556,4 +556,65 @@ class __pool_alloc : private __pool_alloc_base
 
 ![容器list](./STL&GenericProgramming - Houjie.assets/list.png)
 
+```cpp
+template <class T, class Alloc = alloc>
+class list
+{
+protected:
+	typedef __list_node<T> list_node;
+public:
+	typedef list_node* link_type;
+	typedef __list_iterator<T,T&,T*> iterator;
+protected:
+	link_type node;
 
+	// ...
+}
+```
+
+1. 整个list唯一的数据成员就是`node`，为了知道`link_type`到底是什么，我们需要向上寻找，发现`link_type`是一个指针。由此我们也就知道了整个容器的大小就是一个指针，4个byte。所以，如果我们对一个list对象进行`sizeof()`，最后得到的结果是4。
+2. 再来看节点本身`list_node` ：
+	```cpp
+	template <class T>
+	struct __list_node
+	{
+		typedef void* void_pointer;
+		void_pointer prev;
+		void_pointer next;
+		T data;
+	}
+	```
+	我们可以发现，指针的类型是`void *`，也就是说在实际的程序运作中是需要转型的。***这样不是很理想***。
+	同时，每一个元素申请的元素大小，除了`data`的大小本身，还有两根指针。
+3.	再来看`iterator`,我们希望iterator的运行类似指针，但是一定要比指针“聪明：当我们使用`iterator++`的时候，我们希望的是挪到下一个元素的位置，而不是向后挪4个byte。所有的容器，除了array和vector，都必须是一个class，才能设计出聪明的iterator
+	```cpp
+	template <class T, class Ref, class Ptr>
+	struct __list_iterator
+	{
+		// 几乎所有的容器都有五个typedef
+		typedef __list_iterator<T, Ref, Ptr>	self;
+		typedef bidirectional_iterator_tag		iterator_category;	//(1)
+		typedef T								value_type;			//(2)
+		typedef Ptr								pointer;			//(3)
+		typedef Ref								reference;			//(4)
+		typedef __list_node<T>*					link_type;
+		typedef ptrdiff_t						difference_type;	//(5)
+
+		link_type node;
+		
+		// 模拟指针的操作
+		reference operator*() const { return (*node).data; }
+		pointer operator->() const { return &(operator*()); }
+		self& operator++()
+			{ node = (link_type) ((*node).next); return *this; }
+		self  operator++(int)
+			{ self tmp = *this; ++*this; return tmp; }
+	}
+	```
+4.	对iterator进行提领
+	
+	> 当我们对某个type实施`operator->`，而该type并非 build-in ptr时，编译器会做一件很有趣的事：
+	>
+	> 在找出`user-defined operator->`并将它施行于该type后，编译器会对执行结果再次施行`operator->`。
+	>
+	> 编译器会不断执行这个动作直到触及`pointer to a build-in type`，然后才进行成员存取
