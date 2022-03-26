@@ -94,7 +94,7 @@ ram --git commit--> local[本地库 - 历史版本]
 
             ```shell
             git config --global user.name tom_glb
-            git config --global goodMorning@qq.com
+            git config --global usergoodMorning@qq.com
             ```
 
         - 级别优先级
