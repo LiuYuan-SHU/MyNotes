@@ -575,6 +575,7 @@ protected:
 1. 整个list唯一的数据成员就是`node`，为了知道`link_type`到底是什么，我们需要向上寻找，发现`link_type`是一个指针。由此我们也就知道了整个容器的大小就是一个指针，4个byte。所以，如果我们对一个list对象进行`sizeof()`，最后得到的结果是4。
 2. 再来看节点本身`list_node` ：
 	```cpp
+	// GNU 2.9
 	template <class T>
 	struct __list_node
 	{
@@ -588,6 +589,7 @@ protected:
 	同时，每一个元素申请的元素大小，除了`data`的大小本身，还有两根指针。
 3.	再来看`iterator`,我们希望iterator的运行类似指针，但是一定要比指针“聪明：当我们使用`iterator++`的时候，我们希望的是挪到下一个元素的位置，而不是向后挪4个byte。所有的容器，除了array和vector，都必须是一个class，才能设计出聪明的iterator
 	```cpp
+	// GNU 2.9
 	template <class T, class Ref, class Ptr>
 	struct __list_iterator
 	{
@@ -618,3 +620,26 @@ protected:
 	> 在找出`user-defined operator->`并将它施行于该type后，编译器会对执行结果再次施行`operator->`。
 	>
 	> 编译器会不断执行这个动作直到触及`pointer to a build-in type`，然后才进行成员存取
+
+5. 为了实现*前闭后开*区间，双向链表在实现成环状之后，还在最后一个元素之后放置了一个空白的节点。
+
+******
+
+***GNU 4.9与2.9的区别***
+
+1. 2.9的`iteratpr`在传参的时候需要传三个，不方便，也容易错误
+2. 2.9版本的节点的指针类型是`void`，不太好
+	![list - G2.9 vs. G4.9](./STL&GenericProgramming - Houjie.assets/list - G2.9 vs. G4.9.png)
+3. 在G4.9版本中，list的数据成员从一个节点的指针，转换成了两个指针，直接保存了前一个和后一个节点的地址。所以大小变为了8Byte。
+
+******
+
+但是，G4.9的设计也更为的复杂，并且一些改动并没有必要。
+
+![list - G4.9](./STL&GenericProgramming - Houjie.assets/list - G4.9.png)
+
+> 一个单纯的东西变得复杂，不是好现象
+
+`list`继承了父类`_List_base`，而`_List_base`内含了`_List_impl`，而`_List_impl`竟然继承了一个allocator类。从OOP的角度看，一个节点类继承allocator是不合适的。
+
+
