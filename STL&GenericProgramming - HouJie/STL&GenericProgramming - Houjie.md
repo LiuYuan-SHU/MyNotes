@@ -627,7 +627,7 @@ protected:
 
 ***GNU 4.9与2.9的区别***
 
-1. 2.9的`iteratpr`在传参的时候需要传三个，不方便，也容易错误
+1. 2.9的`iterator`在传参的时候需要传三个，不方便，也容易错误
 2. 2.9版本的节点的指针类型是`void`，不太好
 	![list - G2.9 vs. G4.9](./STL&GenericProgramming - Houjie.assets/list - G2.9 vs. G4.9.png)
 3. 在G4.9版本中，list的数据成员从一个节点的指针，转换成了两个指针，直接保存了前一个和后一个节点的地址。所以大小变为了8Byte。
@@ -642,4 +642,91 @@ protected:
 
 `list`继承了父类`_List_base`，而`_List_base`内含了`_List_impl`，而`_List_impl`竟然继承了一个allocator类。从OOP的角度看，一个节点类继承allocator是不合适的。
 
+### 深度探索vector
 
+> 一种动态增长的数组。没有一种东西，可以在原地扩充内存。所以在动态扩充的过程中，是在内存的另外一个地方寻找足够大小的位置，重新将元素放进去
+
+#### 部分源代码
+
+```cpp
+template <class T, class Alloc = alloc>
+class vector
+{
+public:
+	typedef	T			value_type;
+	typedef value_type*	iterator;
+	typedef value_type& reference;
+	typedef size_t		size_type;
+protected:
+	iterator start;
+	iterator finish;
+	iterator end_of_storage;
+public:
+	iterator begin() { return start; }
+	iterator end() { return finish; }
+	size_type size() const { return size_type(end() - begin()); }
+	size_type capacity() const { return size_type(end_of_storage - begin()); }
+	bool empty() const { return end() == begin(); }
+	reference operator[](size_type n) { return *(begin() + n); }
+	reference front() { return *begin(); }
+	reference back() { return *(end() - 1); }
+
+	void push_back(const T& x)
+	{
+		// 尚有备用空间
+		if (finish != end_of_storage)
+		{
+			construct(finish, x);
+			++finish;
+		}
+		// 没有备用空间
+		else
+		{
+			insert_aux(end(), x);
+		}
+	}
+
+	template <class T, class Alloc>
+	void vector<T, Alloc>::insert_aux(iterator position, const T& x)
+	{
+		// 多做一次检查，防止还有剩余空间
+		if (finish != end_of_storage)
+		{
+			construct(finish, *(finish - 1));
+			++finish;
+			T x_copy = x;
+			copy_backward(position, finish - 2, finish - 1);
+			*position = x_copy;
+		}
+		// 确定已经没有剩余空间
+		else
+		{
+			const size_type old_size = size();
+			const size_type len = old_size != 0 ? 2 * old_size : 1;
+
+			iterator new_start = data_allocator::allocate(len);
+			iterator new_finish = new_start;
+			try
+			{
+				// 将原vector的内容拷贝到新vector
+				new_finish = uninitialized_copy(start, position, new_start);
+				// 为新的元素设定初值
+				construct(new_finish, x);
+				++new_finish;
+				// 拷贝插入点后的内容（这个函数也可能会被insert(p, x)调用）
+				new_finish = uninitialized_copy(position, finish, new_finish);
+			}
+			catch(...)
+			{
+				// "commit or rollback" semantics
+				destroy(new_start, new_finish);
+				data_allocator::deallocate(new_start, len);
+				throw;
+			}
+		}
+	}
+}
+```
+
+1. vector的大小就是三个指针的大小
+2. 每一次成长，会大量调用元素的拷贝函数和析构函数
