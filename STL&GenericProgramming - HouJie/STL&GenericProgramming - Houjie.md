@@ -601,7 +601,7 @@ protected:
 		typedef Ref								reference;			//(4)
 		typedef __list_node<T>*					link_type;
 		typedef ptrdiff_t						difference_type;	//(5)
-
+	
 		link_type node;
 		
 		// 模拟指针的操作
