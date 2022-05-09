@@ -1,3 +1,0 @@
-﻿  源.cpp
-E:\Liuyuan\GitHubRepositories\1_MyNotes\Windows32\Projects\Day3\Test\Test\源.cpp(93,3): warning C4065: switch statement contains 'default' but no 'case' labels
-  Test.vcxproj -> E:\Liuyuan\GitHubRepositories\1_MyNotes\Windows32\Projects\Day3\Test\Debug\Test.exe
