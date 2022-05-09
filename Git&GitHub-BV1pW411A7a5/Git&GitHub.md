@@ -318,4 +318,4 @@ ram --git commit--> local[本地库 - 历史版本]
 3. 一路回车，按照默认走
 3. 结束后，秘钥存在`/.ssh/id_rsa.pub`中
 3. 将获得的秘钥复制到`settings`->`SSH and GPG keys`->`new SSH key`
-3. 之后`git remote add [别名] [SSH]`，使用这个就不需要账号密码
+3. 之后`git remote add [别名] [SSH]`，使用这个就不需要账号密码 

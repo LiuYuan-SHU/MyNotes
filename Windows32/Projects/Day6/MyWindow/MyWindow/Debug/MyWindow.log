@@ -1,0 +1,22 @@
+﻿生成启动时间为 2022/4/30 21:04:01。
+     1>项目“E:\Desktop\MyWindow\MyWindow\MyWindow.vcxproj”在节点 2 上(Build 个目标)。
+     1>ClCompile:
+         F:\Visual Studio2013\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _UNICODE /D UNICODE /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\MyWindow.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         F:\Visual Studio2013\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _WINDOWS /D _DEBUG /D _UNICODE /D UNICODE /D _AFXDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\MyWindow.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt MyWindow.cpp MyWindowDlg.cpp
+         MyWindowDlg.cpp
+         MyWindow.cpp
+         正在生成代码...
+       ResourceCompile:
+         C:\Program Files (x86)\Windows Kits\8.1\bin\x86\rc.exe /D _DEBUG /D _UNICODE /D UNICODE /D _AFXDLL /l"0x0804" /IDebug\ /nologo /fo"Debug\MyWindow.res" MyWindow.rc 
+       Link:
+         F:\Visual Studio2013\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\Desktop\MyWindow\Debug\MyWindow.exe" /INCREMENTAL /NOLOGO /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /manifestinput:"F:\Visual Studio2013\VC\Include\Manifest\dpiaware.manifest" /DEBUG /PDB:"E:\Desktop\MyWindow\Debug\MyWindow.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /ENTRY:"wWinMainCRTStartup" /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\Desktop\MyWindow\Debug\MyWindow.lib" /MACHINE:X86 Debug\MyWindow.res
+         Debug\MyWindow.obj
+         Debug\MyWindowDlg.obj
+         Debug\stdafx.obj
+         MyWindow.vcxproj -> E:\Desktop\MyWindow\Debug\MyWindow.exe
+     1>已完成生成项目“E:\Desktop\MyWindow\MyWindow\MyWindow.vcxproj”(Build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:02.32
