@@ -67,6 +67,8 @@ Threads are numbered from $0$ (master thread) to $N-1$.
 
 #### 子句含义
 
+> [笔记来源](https://blog.csdn.net/qq_37206769/article/details/89189780)
+
 ##### collapse
 
 在一些情况下，collapse 能够解决线程间[负载均衡](https://so.csdn.net/so/search?q=负载均衡&spm=1001.2101.3001.7020)或线程负载太小的问题。假设有一个双层循环，外层循环次数都比较少，内层循环的计算量也不大。单独使用OpenMP线程化内层循环都会存在负载不够的问题，即每个线程的计算量比较小，导致线程的计算时间相比线程的建立、销毁时间不够长；单独使用OpenMP线程化外层循环则会存在负载均衡问题。
@@ -186,36 +188,165 @@ i am 2, 38
 x = 38		// 在结束后将值复制给x
 ```
 
+从结果可以看出，退出for循环的并行区域后，共享变量x的值发生了改变，而不是保持原来的值不变。
 
+由于并行区域内有多个线程并行执行，因此最后到底是将哪个线程的最终计算结果赋给了对应的变量是一个问题。如果是for循环，那么是最后一次循环计算得到的值；如果是section构造，那么是最后一个section语句中计算得到的值。
 
-#### Example
+##### shared
 
-```c++
+shared子句用来声明一个或多个变量是共享变量。需要注意的是，由于在并行区域内的多个线程都可以访问共享变量，因此必须对共享变量的写操作加以保护。为了提高性能，应尽量使用私有变量而不是共享变量。
+
+循环迭代变量在for循环并行区域内是私有的。声明在循环构造区域内的自动变量都是私有的。
+
+##### default
+
+default子句用来指定并行处理区域内没有显式指定访问权限的变量的默认访问权限，其取值有shared和none两个。指定为shared表示在没有显式指定访问权限时，传入并行区域内的变量访问权限为shared；指定为none意味着必须显式地为这些变量指定访问权限。
+
+在某些情况下，OpenMP默认变量访问权限会导致一些问题，如需要private访问权限的数组被默认成shared了。故建议显式地使用default(none)来去掉变量的默认访问权限。
+
+##### reduction
+
+reduction子句用来在运算结束时对并行区域内的一个或多个参数执行一个操作。每个线程将创建参数的一个副本，在运算结束时，将各线程的副本进行指定的操作，操作的结果赋值给原始的参数。
+
+reduction支持的操作符是有限的，支持+ - * / += -= *= /= |&^，且不能是C++重载后的运算符，具体可参见OpenMP规范。
+
+```cpp
 #include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-main ()  {
-
-int nthreads, tid;
-
-/* Fork a team of threads with each thread having a private tid variable */
-#pragma omp parallel private(tid)
-  {
-
-  /* Obtain and print thread id */
-  tid = omp_get_thread_num();
-  printf("Hello World from thread = %d\n", tid);
-
-  /* Only master thread does this */
-  if (tid == 0) 
-    {
-    nthreads = omp_get_num_threads();
-    printf("Number of threads = %d\n", nthreads);
+long double computePI(int numThread, int num)
+{
+	long double PI = 0.0;
+	const double delta = 1.0/(numThread*num);
+#pragma omp parallel for num_threads(numThread) reduction(+:PI)
+	for(int i = 0; i < num*numThread; i++)
+	{
+		double x = (0.5+i)*delta;
+		PI += 1.0/(1+x*x);
     }
 
-  }  /* All threads join master thread and terminate */
+    return PI*delta*4;
+}
 
+int main(int argc, char *argv[])
+{
+    int numThread, num;
+	if(argc != 3)
+    {
+		printf("usage: ./a.out numThread computeNum\n");
+		return 1;
+	}
+	else
+	{
+		numThread = atoi(argv[1]);
+		num = atoi(argv[2]);
+		printf("use thread %d, every thread compute times %d\n", numThread, num);
+		if(0 <= numThread || 0 <= num)
+         {
+           	 printf("input data format error\n");
+			return 1;
+		 }
+    }
+
+	clock_t s = clock();
+	double PI = computePI(numThread, num);
+	clock_t e = clock();
+
+	printf("PI is %1.15lf, use clock %ld\n", PI, e-s);
+
+	return 0;
+}
+
+```
+
+***输出***
+
+```
+$ ./test.exe 24 10000000
+use thread 24, every thread compute times 10000000
+PI is 3.141592653589814, use clock 46
+```
+
+##### schedule
+
+***测试代码***
+
+```cpp
+#include <omp.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+#pragma omp parallel for num_threads(3) schedule(schedule_style, 2)
+// #pragma omp parallel for num_threads(3) schedule(runtime)
+	for(int i = 0; i < 300; i++)
+    {
+    	printf("i am %d, i = %d\n", omp_get_thread_num(), i);
+	}
+    
+    return 0;
 }
 ```
+
+***编译方式***
+
+```
+g++ -fopenmp -Dschedule_style=<策略> test.cpp
+如果采用的是runtime策略，那么将第一个宏注释，启用第二个
+```
+
+
+
+schedule子句指定采取的负载均衡策略及每次分发的数据大小。其使用方式如下：`schedule(type <,size>)`。其中，size参数是可选的
+
+* type参数表示负载均衡策略，主要有4种：dynamic、guided、static和runtime。实际上只有static、dynamic、guided三种方式，runtime指的是根据环境变量的设置来选择前3种中的某一种。
+
+* size参数表示每次分发的循环迭代次数，必须是整数。3种策略都可用可不用size参数。当type为runtime时，需要忽略size参数。
+
+###### 静态负载均衡策略（static）
+
+[输出](./Test/子句含义/schedule/static.txt)
+
+当编译指导语句没有指定schedule子句时，大部分系统中默认采用static，static方式使用的算法非常简单。
+
+假设有从0开始的N次循环迭代，K个线程，如果没有指定size参数，那么给第一个线程分配的迭代为$[0，N/K]$。因为$N/K$不一定是整数，因此存在着轻微的负载均衡问题；如果指定size参数的话，那么分配给第一个线程的是$[0，size-1]$， 第K个线程的是$[size*K，size*K+size-1]$其他线程类推，直到分配完循环迭代。
+
+###### 动态负载均衡策略（dynamic）
+
+[输出](./Test/子句含义/schedule/dynamic.txt)
+
+动态负载均衡策略动态地将迭代分发到各个线程。当线程计算完时，就会取得下一次任务。在静态负载均衡策略失效时，使用动态负载均衡策略通常可以得到性能提升。
+
+动态负载均衡的机制类似于工作队列，线程在并行执行的时候，不断从这个队列中取出相应的工作完成，直到队列为空为止。由于每一个线程在执行的过程中的线程标识号是不同的，可以根据这个线程标识号来分配不同的任务。OpenMP中动态负载均衡时，每次分发size个循环计算，而队列中的数据就是所有的循环变量值。
+
+动态负载均衡策略可用可不用size参数，不使用size参数时等价于size为1。使用size参数时，每次分配给线程的迭代次数为指定的size次。
+
+选择size参数时，要注意伪共享问题。通常要使得每个线程从内存中加载的数据大小可以占满一个缓存线。
+
+###### 指导负载均衡策略（guided）
+
+[输出](./Test/子句含义/schedule/guided.txt)
+
+guided负载均衡策略采用启发式自调度方法。开始时每个线程会分配较大的循环次数，之后分配的循环次数会逐渐减小。通常每次分配的循环次数会指数级下降到指定的size大小，如果没有指定size参数，那么最后会降到1。
+
+###### 运行时负载均衡策略（rumtime）
+
+[输出](./Test/子句含义/schedule/runtime.txt)
+
+runtime是指在运行时根据环境变量OMP_SCHEDULE的值来确定负载均衡策略，最终使用的负载均衡策略是上述3种中的一种。
+
+##### if
+
+子句if提供了一种由运行时决定是否并行的机制，如果if条件为真，并行区域会被多个线程执行，否则只由一个线程执行。
+
+```cpp
+#pragma omp parallel for num_threads(3) if(x <= 5)
+```
+
+
 
 ### exercise1
 
