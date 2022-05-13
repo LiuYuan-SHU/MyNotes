@@ -1,14 +1,10 @@
 # OpenMP Notes
 
 > [Excellent Free Tutorials to Learn OpenMP](https://www.linuxlinks.com/excellent-free-tutorials-learn-openmp/)
+>
+> [OpenMP API 用户指南](./OpenMP API 用户指南.pdf)
 
 [TOC]
-
-### 
-
-
-
-
 
 ## [OpenMP by Blaise Barney](https://hpc-tutorials.llnl.gov/openmp/)
 
@@ -64,6 +60,98 @@ Threads are numbered from $0$ (master thread) to $N-1$.
 * Only a single NUM_THREADS clause is permitted.
 
 * A program must not depend upon the ordering of the clauses.
+
+#### 工作共享构造
+
+>工作共享构造在遇到该构造的线程组成员中分配封装代码区域的执行。要使工作共享构造以并行方式执行，构造必须封装在并行区域内。
+
+##### **DO** 和 **for** 构造
+
+> 指定随后的 **DO** 或 **for** 循环的迭代必须以并行方式执行。
+
+```c++
+#pragma omp for [clause[[,]clause]...]
+for-loop
+```
+
+**for** pragma 指定其后紧跟的 for- *循环*的迭代应以并行方式执行。此 pragma 必须出现在并
+
+行区域内才有效。 **for** pragma 对相应 **for** 循环的结构有限制，且必须有*规范形状*：
+
+`for (initexpr; var logicop b; increxpr)`
+
+其中：
+
+*  `initexpr` 为以下之一：
+    
+    * `var = lb`
+    * `integer_type var = lb`
+    
+* `increxpr` 为以下表达式形式之一：
+
+    * `++var`
+
+    * `var++`
+
+    * `--var`
+
+    * `var--`
+
+    * `var += incr`
+
+    * `var -= incr`
+
+    * `var = var + incr`
+
+    * `var = incr + var`
+
+    * `var = var - incr`
+
+        
+
+* `var` 是有符号整型变量，被隐式设置为供 **for** 范围专用。切勿修改 **for** 语句体内的`var`。除非指定 **`lastprivate`**，否则其值在循环后不确定。
+
+* `logicop` 为以下逻辑操作符之一：
+
+$$
+< <= > >=
+$$
+
+* `lb`、` b `和 `incr `是循环不变量整型表达式。
+
+对 < 或 <= 和 > 或 >= 作为 **for** 语句中的` logicalop `使用尚有其它限制。有关详细信息，参见OpenMP C/C++ 规范。
+
+
+
+##### **SECTIONS** 构造
+
+> **SECTIONS** 构造用于封装要在组内的线程中分配的非迭代代码块。每个块由组内的线程执行一次。
+>
+> 每段均以 **SECTION** 指令开头，该指令对第一段为可选指令
+
+```cpp
+#pragma omp sections [clause1, clause2, ...]
+{
+    [#pragma omp section]
+    { /*非迭代代码*/}
+}
+
+```
+
+
+
+##### SINGLE构造
+
+> 使用 **SINGLE** 封装的结构化块只由组内的一个线程来执行。除非指定 **NOWAIT**，否则组内未在执行 **SINGLE** 块的线程会在块结尾处等待。
+
+```c++
+#pragma omp single [clause[[,] clause]...]
+{
+    /*单独执行代码*/
+}
+```
+
+
 
 #### 子句含义
 
@@ -351,3 +439,46 @@ runtime是指在运行时根据环境变量OMP_SCHEDULE的值来确定负载均�
 ### exercise1
 
 > [files](./Exercises/exercise1)
+
+#### 常用API总结
+
+> 此部分来源于[OpenMP API 用户指南](./OpenMP API 用户指南.pdf)
+
+##### **OMP_SET_NUM_THREADS** 例程
+
+>  设置供后续并行区域使用的线程数
+
+```c++
+#include <omp.h>
+void omp_set_num_threads(int num_threads);
+```
+
+
+
+##### **OMP_GET_THREAD_NUM** 例程
+
+> 返回组内执行对此函数调用的线程的号码。此号码位于 0 和OMP_GET_NUM_THREADS()-1 之间， 0 为主线程。
+
+```c++
+#include <omp.h>
+int omp_get_thread_num(void);
+```
+
+##### **OMP_SET_NUM_THREADS** 例程
+
+> 设置供后续并行区域使用的线程数
+
+```c++
+#include <omp.h>
+void omp_set_num_threads(int num_threads);
+```
+
+##### **OMP_GET_NUM_THREADS** 例程
+
+> 返回当前组中正在执行从中调用其的并行区域的线程的数量。
+
+```c++
+#include <omp.h>
+int omp_get_max_threads(void);
+```
+
