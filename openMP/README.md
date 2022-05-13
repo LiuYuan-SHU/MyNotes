@@ -129,6 +129,8 @@ $$
 >
 > 每段均以 **SECTION** 指令开头，该指令对第一段为可选指令
 
+示例代码可见[此处](./Exercises/exercise1/3. omp_workshare2.c)
+
 ```cpp
 #pragma omp sections [clause1, clause2, ...]
 {
