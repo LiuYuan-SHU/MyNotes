@@ -95,6 +95,28 @@ shell hello.sh
 	* Case sensitive
 
 
-### The scope of variables
+### Variables and their scope
+
+* Local variables are only for current process.
+
+	* Check current process tree: `pstree`
+	* ```shell
+	  var1="123"
+	  echo $var1	# "123"
+	  # enter a new shell
+	  sh
+	  echo $var1	# ""
+	  ```
+* Environment variables, which is also called global variables, can be found in all the shell, such as `$PATH`
+* positional parameters: Used in shell script to pass parameters.
+* Special parameters:
+
+	* `$?`
+		* 0: Success
+		* 1-255: Error Code
+	* ```shell
+	  ls -s
+	  $?		# 0: the last command was successful
+	  ```
 
 
