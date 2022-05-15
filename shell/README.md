@@ -57,3 +57,44 @@ echo "Hello World!"
 # method 2
 shell hello.sh
 ```
+
+# Shell Variables
+
+> Variables are where to store data temporarily.
+
+> ```shell
+> name="123"
+> echo $name		# print "123"
+> sudo -i
+> echo $name		# print an empty line
+> ```
+
+## Basic Notes
+
+### Definitiono / Assignment / Naming
+
+* The definition and assignment of variables mustn't contain spaces
+	* ```shell
+	  name = "123"
+	  Error: "name" is not a command
+	  ```
+	
+	* Shell is a weakly typed language, the definition and assignment can go together without defining type beforehand.
+* The substitution and reference of variables
+	* ```shell
+	  name="123"
+	  echo $name
+	  echo ${name}	# full spelling
+	  ```
+* The rule of naming variables:
+
+	* The naming of variables must be clear and comprehensible 
+	* Only contains numbers, alphabets and `_`
+	* Mustn't start with number
+	* Mustn't contain punctuation mark
+	* Case sensitive
+
+
+### The scope of variables
+
+
