@@ -108,4 +108,74 @@ shell hello.sh
 	  ls -s
 	  $?		# 0: the last command was successful
 	  ```
+# Parent & Child Shell
 
+Parameters in shell are defaultly defined as string
+
+```shell
+# the same
+age=17
+age='17'
+age="17"
+```
+
+However, `""`can specify special characters while `''` can not.
+
+```shell
+name=123
+name1='$name'
+name2="$name"
+echo name1		# "$name"
+echo name2		# "123"
+```
+
+## Different ways of execution create different shell environments
+
+1.	Each time we call `bash/sh` to execute a script, it will create a child shell. Therefore local parameters won't be saved.
+
+	```shell
+	# make_var.sh
+	var="123"
+
+	# in current shell environment
+	name="watermellon"
+	sh make_var.sh
+	echo var		# "123"
+	echo name		# ""
+	```
+
+2.	`source / .` loads scripts in current environment, therefore parameters will be saved.
+	
+	```shell
+	# make_var.sh
+	var="123"
+
+	# in current shell environment
+	name="watermellon"
+	source make_var.sh
+	echo var			# "123"
+
+	echo name			# "watermellon"
+	```
+
+## Save the result of command execution
+
+```shell
+# `command`
+
+files=`ls`
+echo files		# print nodes in current directory
+```
+
+## Practice
+
+***Which one is the correct answer of the following quesion?***
+
+```shell
+$ cat test.sh
+user1=`whoami`
+$ sh test.sh
+$ echo $user1
+```
+
+***Answer: ""***
