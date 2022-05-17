@@ -179,3 +179,41 @@ $ echo $user1
 ```
 
 ***Answer: ""***
+
+## Environment Variables
+
+> Environment variables are usually refer to the variables exported by build-in command `export`, which are used to define runtime environment of shell and make sure the correct execution of it.
+>
+> Shell determine username, `PATH`, file system and so on with environment variables.
+>
+> Environment variables can be created for a short time in command line. However, these variables will be lost when the user quits shell terminal. To make these changes last, we need to modify ***environment variables config file***
+>
+> Each user has their own environment variables files. `~/.bash_profile` and `~/.bashrc`, and the system load variables first from personal config file. 
+>
+> To add an environment variable for all users, write it into `/etc/profile`
+
+### Commands to check system environment variables
+
+* `set`: print all the variables in current environment, including global variables and local variables
+* `env`: print global environment variables only
+* `declare`: print all the variables, just like `set`
+* `export`: print and set environment variables
+	```shell
+	export name="123456"
+	```
+
+### Cancel Environment Variables
+
+* `unset <variable>`: delete variable or function
+
+### Set readonly variables
+
+> Variables are invalidated only when the shell terminates
+
+```shell
+readonly name="123"
+```
+
+### System Reserved Keywords
+
+* `$PATH`
