@@ -102,35 +102,3 @@ Tom与John在不同的地方登录到服务器，Tom打开tmux简历一个会话
 第一次启动配置文件：
 
 `source-file ~/.tmux.conf`
-
-```bash
-# send prefix
-# 把Prefix的Ctrl+b变为Ctr+a
-# set-option -g prefix C-a
-# unbind-key C-a
-# bind-key C-a send-frefix
-
-# Use Alt-arrow keys to swtich panes
-bind -n M-Left select-pane -L
-bind -n M-Right select-pane -R
-bind -n M-Up select-pane -U
-bind -n M-Down select-pane -D
-
-# Shift arrow to swtich windows
-bind -n S-Left precious-window
-bind -n S-Right next-window
-
-# Mouse mod
-set -g mouse on
-
-# Zoom
-bind ^z run "tmux-zoom"
-
-# Set easier windows split keys
-bind-key v split-window -h
-bind-key h split-window -v
-
-# Easy config reload
-bind-key r source-file ~/.tmux.conf \;
-display-message "tmux.conf reloaded"
-```
