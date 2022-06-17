@@ -1,11 +1,5 @@
 # 泛型编程与STL
 
-[TOC]
-
-## 读后感
-
-这确实是一本好书。
-
 ## 引入
 
 ### *Why Iterator?* -- 线性查找（linear search）
