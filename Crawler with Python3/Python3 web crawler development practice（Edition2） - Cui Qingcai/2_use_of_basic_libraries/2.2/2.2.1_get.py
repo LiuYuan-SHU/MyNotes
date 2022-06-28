@@ -10,7 +10,9 @@ def get_test():
 
 def get_json():
     r = get('https://www.httpbin.org/get')
+    print(r.text)
     print(r.json())
+    print(type(r.json()))
 
 # get_test()
 get_json()
