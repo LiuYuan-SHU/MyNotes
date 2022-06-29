@@ -1,0 +1,328 @@
+```toc
+
+```
+
+
+# 2.1 urllib的使用
+
+## [urllib的基本使用](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.0_urllib%E7%9A%84%E5%9F%BA%E6%9C%AC%E4%BD%BF%E7%94%A8.py)
+
+### [urlopen参数详解](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.1_urlopen%E5%8F%82%E6%95%B0%E8%AF%A6%E8%A7%A3.py)
+
+## [Request](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.2_urllib.request.py)
+
+> 如果需要往请求中加入Headers等信息，就需要Request类来构建请求
+> 
+
+### Request类
+
+如果需要往请求中加入Headers等信息，就需要Request类来构建请求。通过独立构造Request对象，我们可以：
+
+1. 将请求独立生成成一个对象
+2. 更加丰富和灵活地配置参数
+
+同时，我们在使用`urlopen`方法的时候，也可以直接传递一个`Request`对象作为参数。
+
+---
+
+```python
+def __init__(self,
+             url: str,
+             data: bytes | None = ...,
+             headers: MutableMapping[str, str] = ...,
+             origin_req_host: str | None = ...,
+             unverifiable: bool = ...,
+             method: str | None = ...)
+```
+
+1. url：用于请求URL，必传参数，其余都是可选参数
+2. data：数据必须是`bytes`类型。如果数据是字典，可以先用`urllib.parse.urlencode`方法进行处理
+3. headers：请求头。可以直接在此处进行构造，也可以通过调用返回的实例的`add_header`方法添加
+    
+    添加请求头最常见的方法就是通过修改`User-Agent`来伪装浏览器。默认的`User-Agent`是`Python-urllib`，我们可以通过这样的方式伪装成火狐浏览器：
+    
+    ```
+    Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 FireFox/2.0.0.11
+    ```
+    
+4. origin_req_host：请求方的host名称或IP地址
+5. unverifiable：请求是否是无法验证的，默认值false。意思是用户是否有资格获取请求的结果。
+6. method：指示请求使用的方法，例如GET,POST,PUT等
+
+---
+
+### 函数`multi_parameter_request`（见文件2.1.2）
+
+我们在`url`中设置URL，在`headers`中设置了`User-Agent`和`Host`，从而伪装了自己的浏览器身份还有IP地址
+
+我们将`name`放在字典中，并使用`urlencode`方法进行处理，最后处理成`bytes`类型，将三个参数用于构造一个`Request`对象
+
+```json
+{
+  "args": {}, 
+  "data": "", 
+  "files": {}, 
+  "form": {
+    "name": "germey"
+  }, 
+  "headers": {
+    "Accept-Encoding": "identity", 
+    "Content-Length": "11", 
+    "Content-Type": "application/x-www-form-urlencoded", 
+    "Host": "www.httpbin.org", 
+    "User-Agent": "Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)", 
+    "X-Amzn-Trace-Id": "Root=1-62b87ba7-0b48d956616b76aa2aa845c0"
+  }, 
+  "json": null, 
+  "origin": "199.101.192.143", 
+  "url": "https://www.httpbin.org/post"
+}
+```
+
+可以看到，`form`中存放着我们的`data`，而在响应头中，我们的识别和Host地址都已经改变
+
+## 高级用法
+
+> 如果想要进一步操作Cookie，或者是代理，就需要更为强大的工具。
+> 
+
+### Handler和Opener
+
+> Handler（`urllib.request.BaseHandler`是其他所有Handler类的父类）可以理解为各种处理器，可以专门用于处理登录验证、Cookie和代理等
+> 
+> 
+> Opener（`OpennerDirector`），`urlopen`其实就是`urllib`提供的一个`Openner`。
+> 
+
+之前使用的`Request`类和`urlopen`类是已经被封装好的极其常用的请求方法，但当我们需要更高级的功能的时候，就需要更底层的事例来完成操作。
+
+### [验证](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.3_%E9%AA%8C%E8%AF%81.py)
+
+![[登录.png]]
+
+[https://ssr3.scrape.center/](https://ssr3.scrape.center/)
+
+遇到了这种情况，就表示这个网站启用了基本身份认证（**HTTP Basic Access Authentication**），这是一种登录验证方式，允许网页浏览器或其他客户端程序在请求网站时提供用户名和口令形式的身份验证。
+
+1. 首先，我们实例化一个`HTTPPasswordMgrWithDefaultRealm`对象，并利用`add_password`方法添加用户名和密码
+2. 接着，我们用步骤1中实例化的对象作为`HTTPBasicAuthHandler`对象的构造函数参数，这样就构建了一个用来处理验证的Handler类
+3. 然后利用`Openner`类的`open`方法打开链接，即可完成验证
+
+### [代理](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.4_%E4%BB%A3%E7%90%86.py)
+
+原理与[验证](https://www.notion.so/2-1-urllib-bc54585a643148838747b320d9a1aaa4)相同，唯一需要注意的地方在于，这里用的是本地代理，如果本地的相应端口没有设置HTTP代理，那么就会出现这样的报错结果：
+
+![[未在本地开启代理.png]]
+
+### [Cookie](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.5_Cookie.py)
+
+### `get_cookie`
+
+我们首先创建一个cookie对象，然后将这个空的cookie传递给网站，网站就会将新的cookie写入这个对象中。我们遍历这个对象，就能得到网站的cookie
+
+### `save_cookie_in_Mozilla`&`save_cookie_in_LWP`
+
+既然我们可以拿到cookie，那么我们就可以用一些方法将这个对象转换为文本格式的内容。我们可以使用`MozillaCookieJar`方法和`LWPCokkieJar`方法将cookie转换为相应的格式并保存在`filename`中，方便下次提交
+
+### `read_cookie`
+
+我们可以从既有的文本文件中读取cookie，并将其作为网站保存在本地的cookie提交，相当于**我们自己准备好了cookie，这样就可以在将来跳过网站的登录步骤，找到我们之前登录的session，然后直接开始爬取工作**
+
+## [处理异常](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.6_%E5%A4%84%E7%90%86%E5%BC%82%E5%B8%B8.py)
+
+<aside>
+📌 通过合理地捕获一场可以做出更准确的异常判断，使程序更加稳健
+
+</aside>
+
+### URLError
+
+**所有`request`模块产生的异常都可以通过这个异常捕获来处理。**它具有一个属性`reason`，能够返回错误的原因。
+
+### HTTPError
+
+HTTPError是URLError的子类，专门用来处理HTTP请求错误，例如认证失败等。它有如下3个属性
+
+1. `code`：返回HTTP状态码，例如404等
+2. `reason`：返回错误原因
+3. `heade`：返回请求头
+
+当然，我们可以选择先捕获子类异常，然后再捕获父类异常
+
+---
+
+有的时候返回的异常不一定是一个字符串也有可能是一个对象。我们可以用`isinstance`来进行更加详细的分析，然后做出更好的解决
+
+## 解析链接
+
+> `parse`模块定义了处理URL的标准接口，例如实现URL各部分的抽取、合并以及链接转换。
+> 
+
+### [urlparse](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.7_urlparse.py)
+
+urlparse方法在解析URL时有特定的分隔符。
+
+```python
+ParseResult(scheme='https', netloc='www.baidu.com', path='/index.html', params='user', query='id=5', fragment='commit')
+```
+
+#### **标准链接格式**
+
+```
+scheme://netloc/path;params?query#fragment
+```
+
+一个标准的URL都会符合这个规则，利用urlparse方法就可以将其拆分开来
+
+1. scheme：协议
+2. netloc：域名
+3. path：访问路径
+4. params：参数
+5. query：查询条件，一般用作GET类型的URL
+6. fragment：锚点，用于直接定位页面内部的下拉位置
+
+#### urlparse API
+
+```python
+urllib.parse.urlparse(urlstring, schme='', allow_fragments=True)
+```
+
+1. urlstring：待解析的URL
+2. scheme：如果待解析的URL没有带协议信息，那么就会把这个作为默认协议
+3. allow_fragments：是否忽略`fragment`。如果此项被设置为false，那么fragment部分就会被忽略，它会被解析为path，params或者query的一部分，而fragment部分为空
+
+返回的`ParseResult`其实是一个元组，既可以用属性名获取内容，也可以用索引来顺序获取
+
+```python
+result.scheme # result[0]
+result.netloc # result[1]
+```
+
+二者是一个东西
+
+### [urlunparse](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.1/2.1.8_urlunparse.py)
+
+`urlparse`用于解析URL，`urlunparse`用于构造URL。这个方法接收的参数必须是一个**可迭代对象**，其长度**必须是6**。
+
+### urlsplit
+
+这个方法和`urlparse`非常类似，但是它不在单独解析`params`这一部分，而是直接合并到`path`中，只返回5个结果
+
+### urlunsplit
+
+与`urlunparse`类似，只是只能传入一个长度为5的可迭代对象
+
+### urljoin
+
+前面介绍的两种用于构造URL的方法的前提就是必须传入特定长度的对象，链接的每一个部分都必须清晰分开。
+
+除了这两种方法，我们可以使用`urljoin`。我们可以提供一个`base_url`作为第一参数，将新的链接作为第二参数，方法会分析第一参数中的scheme, netloc和path这三个内容，对新链接缺失的部分进行补充，最后返回结果。
+
+如果`base_url`中提供的三个参数在新链接中已经存在，那么不会进行补充。否则才进行补充
+
+### urlencode
+
+这个方法在构造GET请求的时候非常有用。
+
+```python
+params = {
+	'name': 'germey',
+	'age': 25
+}
+base_url = 'https://www.baidu.com'
+url = base_url + urlencode(params)
+print(url)
+```
+
+这样就可以将一个字典中的内容转化为URL中的GET请求参数
+
+### parse_qs
+
+有序列化，自然就会有反序列化，通过这个方法，就可以将一个URL中的GET参数转换为字典
+
+### parse_qsl
+
+这个方法用于将参数转化为由元组组成的列表
+
+### quote
+
+用这个方法可以将内容转化为URL编码格式，主要用于转换中文参数
+
+```python
+keyword = '壁纸'
+url = 'https://www.baidu.com/s?wd=' + quote(keyword)
+print(url)
+```
+
+### unquote
+
+进行URL解码
+
+# 2.2 requests的使用
+
+> `pip install requests`
+> 
+
+urllib库中的`urlopen`方法实际是以GET方式打开网页，而在`requests`中，其相应的方法就是`get`
+
+而还有更多更加强大的方法：
+
+- `post`
+- `put`
+- `delete`
+- `patch`
+
+这些功能，在requests库中，同样只是一个名字就能完成
+
+## [GET](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.2/2.2.1_get.py)
+
+```python
+def get(url: str | bytes,
+        params: Any = ...,
+        data: Any | None = ...,
+        headers: Any | None = ...,
+        cookies: Any | None = ...,
+        files: Any | None = ...,
+        auth: Any | None = ...,
+        timeout: Any | None = ...,
+        allow_redirects: bool = ...,
+        proxies: Any | None = ...,
+        hooks: Any | None = ...,
+        stream: Any | None = ...,
+        verify: Any | None = ...,
+        cert: Any | None = ...,
+        json: Any | None = ...) -> Response
+```
+
+网页的返回格式是JSON，所以如果想要直接解析返回结果，得到一个JSON格式的数据，可以直接调用`json`方法
+
+不过需要注意的是，如果调对一个非JSON格式数据调用了这个方法，就会抛出`json.decoder.JSONDecodeError`异常
+
+### 抓取网页——`get_web`
+
+### 抓取二进制数据——`get_binary`
+
+### 添加请求头——`add_headers`
+
+## [POST](https://github.com/LiuYuan-SHU/MyNotes/blob/master/Crawler%20with%20Python3/Python3%20web%20crawler%20development%20practice%EF%BC%88Edition2%EF%BC%89%20-%20Cui%20Qingcai/2_use_of_basic_libraries/2.2/2.1.2_post.py)
+
+## 响应
+
+```python
+r = requests.get('https://ssr1.scrape.center/')
+print(type(r.status)code), r.status_code)
+print(type(r.headers), r.headers)
+print(type(r.cookies), r.cookies)
+print(type(r.url), r.url)
+print(type(r.history), r.history)
+```
+
+requests库还提供了一个内置的状态码查询对象`requests.codes`，用法如下：
+
+```python
+r = requests.get('https://ssr1.scrapes.center')
+exit() if not r.status_code == requests.codesok else print('Request Successfully')
+```
+
+## 高级用法
+
