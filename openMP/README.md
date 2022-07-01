@@ -57,7 +57,7 @@ Threads are numbered from $0$ (master thread) to $N-1$.
 
 * Only a single IF clause is permitted.
 
-* Only a single NUM_THREADS clause is permitted.
+* Only a single `NUM_THREADS` clause is permitted.
 
 * A program must not depend upon the ordering of the clauses.
 
