@@ -1,0 +1,21 @@
+{
+  "legacyEditor": false,
+  "livePreview": true,
+  "communityThemeSortOrder": "download",
+  "alwaysUpdateLinks": true,
+  "promptDelete": false,
+  "showFrontmatter": false,
+  "showLineNumber": false,
+  "newFileLocation": "current",
+  "newLinkFormat": "relative",
+  "useMarkdownLinks": true,
+  "strictLineBreaks": true,
+  "spellcheckLanguages": [
+    "zh-CN",
+    "en-US"
+  ],
+  "autoPairBrackets": true,
+  "vimMode": false,
+  "showUnsupportedFiles": true,
+  "spellcheck": true
+}

@@ -1,0 +1,125 @@
+{
+  "main": {
+    "id": "ff688e8b52c9218d",
+    "type": "split",
+    "children": [
+      {
+        "id": "97a15a87f851f7e7",
+        "type": "leaf",
+        "state": {
+          "type": "empty",
+          "state": {}
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3cb669e74494f3a3",
+    "type": "split",
+    "children": [
+      {
+        "id": "565f04d38cb298bd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "22fc2aacf3fc1993",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "908ace3ac834124d",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "4832ec14dc1358ef",
+    "type": "split",
+    "children": [
+      {
+        "id": "ff7c54f64cf4a5fb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "499cedfe33b09cb2",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": true,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "6a686266d5834e9a",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "b127c4ac21fbe8ca",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          },
+          {
+            "id": "7792471bf9cdf293",
+            "type": "leaf",
+            "state": {
+              "type": "advanced-tables-toolbar",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 3
+      }
+    ],
+    "direction": "horizontal",
+    "width": 223
+  },
+  "active": "97a15a87f851f7e7",
+  "lastOpenFiles": [
+    "2022-07-02.md",
+    "Verilog硬件描述语言/Verilog硬件描述语言.md",
+    "Verilog硬件描述语言/Verilog硬件描述语言.assets/抽象数据类型.png",
+    "Verilog硬件描述语言/Verilog硬件描述语言.assets/数据类型.png",
+    "Verilog硬件描述语言/Verilog硬件描述语言.assets/标识符.png",
+    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.3 正则表达式.md",
+    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.2 requests的使用.md",
+    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.1 urllib的使用.md",
+    "C++ Primer/第12章 动态内存与智能指针.md",
+    "C++ Primer/C++ Primer.assets/第12章 动态内存与智能指针.assets/shared_ptr的循环引用.png"
+  ]
+}
