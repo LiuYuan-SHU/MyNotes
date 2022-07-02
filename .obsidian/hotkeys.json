@@ -7,15 +7,6 @@
       "key": "E"
     }
   ],
-  "editor:toggle-blockquote": [
-    {
-      "modifiers": [
-        "Mod",
-        "Shift"
-      ],
-      "key": "Q"
-    }
-  ],
   "obsidian-excalidraw-plugin:insert-link-to-element": [],
   "editor:toggle-highlight": [],
   "markdown:toggle-preview": [

@@ -7,8 +7,12 @@
         "id": "97a15a87f851f7e7",
         "type": "leaf",
         "state": {
-          "type": "empty",
-          "state": {}
+          "type": "markdown",
+          "state": {
+            "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
+            "mode": "source",
+            "source": false
+          }
         }
       }
     ],
@@ -65,6 +69,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
                 "collapseAll": false,
                 "extraContext": true,
                 "sortOrder": "alphabetical",
@@ -81,6 +86,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -91,7 +97,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md"
+              }
             }
           },
           {
@@ -103,7 +111,7 @@
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 2
       }
     ],
     "direction": "horizontal",
@@ -111,8 +119,8 @@
   },
   "active": "97a15a87f851f7e7",
   "lastOpenFiles": [
-    "2022-07-02.md",
     "Verilog硬件描述语言/Verilog硬件描述语言.md",
+    "2022-07-02.md",
     "Verilog硬件描述语言/Verilog硬件描述语言.assets/抽象数据类型.png",
     "Verilog硬件描述语言/Verilog硬件描述语言.assets/数据类型.png",
     "Verilog硬件描述语言/Verilog硬件描述语言.assets/标识符.png",
