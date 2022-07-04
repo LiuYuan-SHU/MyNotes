@@ -4,12 +4,12 @@
     "type": "split",
     "children": [
       {
-        "id": "97a15a87f851f7e7",
+        "id": "f0fcca0b44638852",
         "type": "leaf",
         "state": {
           "type": "markdown",
           "state": {
-            "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
+            "file": "Git&GitHub-BV1pW411A7a5/Git&GitHub.md",
             "mode": "source",
             "source": false
           }
@@ -69,7 +69,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
+                "file": "Git&GitHub-BV1pW411A7a5/Git&GitHub.md",
                 "collapseAll": false,
                 "extraContext": true,
                 "sortOrder": "alphabetical",
@@ -86,7 +86,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md",
+                "file": "Git&GitHub-BV1pW411A7a5/Git&GitHub.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -98,7 +98,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Verilog硬件描述语言/Verilog硬件描述语言.md"
+                "file": "Git&GitHub-BV1pW411A7a5/Git&GitHub.md"
               }
             }
           },
@@ -117,17 +117,17 @@
     "direction": "horizontal",
     "width": 223
   },
-  "active": "97a15a87f851f7e7",
+  "active": "f0fcca0b44638852",
   "lastOpenFiles": [
+    "Git&GitHub-BV1pW411A7a5/Git&GitHub.md",
+    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.3 正则表达式.md",
+    "C++ Primer/第13章 拷贝控制.md",
+    "C++ Primer/第12章 动态内存与智能指针.md",
+    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.2 requests的使用.md",
     "Verilog硬件描述语言/Verilog硬件描述语言.md",
     "2022-07-02.md",
     "Verilog硬件描述语言/Verilog硬件描述语言.assets/抽象数据类型.png",
     "Verilog硬件描述语言/Verilog硬件描述语言.assets/数据类型.png",
-    "Verilog硬件描述语言/Verilog硬件描述语言.assets/标识符.png",
-    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.3 正则表达式.md",
-    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.2 requests的使用.md",
-    "Crawler with Python3/Python3网络爬虫开发实战/第二章/2.1 urllib的使用.md",
-    "C++ Primer/第12章 动态内存与智能指针.md",
-    "C++ Primer/C++ Primer.assets/第12章 动态内存与智能指针.assets/shared_ptr的循环引用.png"
+    "Verilog硬件描述语言/Verilog硬件描述语言.assets/标识符.png"
   ]
 }
