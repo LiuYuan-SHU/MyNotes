@@ -135,8 +135,13 @@ def parse_detail(html):
 
 # 保存文件
 def save_data(data):
+    # 保存的文件名
     name = data.get('title')
+    # 文件的保存路径
     data_path = f'{RESULTS_DIR}/{name}.json'
+    # 生成文件
+    # ensure_ascii为False可以保证中文字符在文件中以正常的中文文本呈现，而不是Unicode字符
+    # indent设置了JSON文件的缩进为两个空格
     json.dump(data, open(data_path, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 
 
