@@ -17,5 +17,6 @@
   "autoPairBrackets": true,
   "vimMode": false,
   "showUnsupportedFiles": true,
-  "spellcheck": true
+  "spellcheck": true,
+  "fileSortOrder": "alphabetical"
 }

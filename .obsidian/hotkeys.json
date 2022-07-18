@@ -5,6 +5,12 @@
         "Mod"
       ],
       "key": "E"
+    },
+    {
+      "modifiers": [
+        "Ctrl"
+      ],
+      "key": "E"
     }
   ],
   "obsidian-excalidraw-plugin:insert-link-to-element": [],
