@@ -18,7 +18,11 @@ html = """
         </p>
         <p clss="story">...</p>
 """
-soup = BeautifulSoup(html, 'lxml')
-print(type(soup.p.contents))
-for item in soup.p.contents:
-    print(str(item).strip())
+def contents():
+    soup = BeautifulSoup(html, 'lxml')
+    print(type(soup.p.contents))
+    for item in soup.p.contents:
+        print(str(item).strip())
+
+
+def child():
