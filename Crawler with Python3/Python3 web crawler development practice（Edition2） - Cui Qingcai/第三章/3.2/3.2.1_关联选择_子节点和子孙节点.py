@@ -25,4 +25,22 @@ def contents():
         print(str(item).strip())
 
 
-def child():
+def children():
+    soup = BeautifulSoup(html, 'lxml')
+    print(type(soup.p.children))
+    for item in soup.p.children:
+        print(str(item).strip())
+
+
+def descendants():
+    soup = BeautifulSoup(html, 'lxml')
+    print(type(soup.p.descendants))
+    # enumerate: 将一个可遍历对象转换为一个索引序列
+    # 同时列出数据下标和数据
+    for item, child in enumerate(soup.p.descendants):
+        print(item, child)
+
+
+contents()
+children()
+descendants()
