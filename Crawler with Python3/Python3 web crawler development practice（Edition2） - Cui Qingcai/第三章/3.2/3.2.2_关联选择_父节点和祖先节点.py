@@ -29,3 +29,5 @@ def parents():
 
 # parent()
 parents()
+
+BeautifulSoup.find_all()
