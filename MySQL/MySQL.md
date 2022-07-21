@@ -160,7 +160,7 @@ MySQL：中大型数据库——百万级数据
 
 ## 查询表
 
-`desc 表名称;`
+`desc(describe) 表名称;`
 
 ## 创建表
 
@@ -204,18 +204,23 @@ create table student(
 
 ### 添加列
 
-`alter table 表名 add 列名 数据类型;`
+`alter table 表名 add 列名 数据类型 (first);`
+
+1. 如果定义了`first`，那么就添加到第一列，否则最后一列。
+2. 在表的指定位置之后添加字段：
+
+```mysql
+alter table 表名 add 列名 数据类型 after 列名
+```
 
 ### 修改列的名称和类型
 
-1.  `alter table 表名 change 列名 新列名 新数据类型;`
-2.  `alter table 表名 modify 列名 新数据类型;`
+1. `alter table 表名 change 列名 新列名 新数据类型;`
+2. `alter table 表名 modify 列名 新数据类型;`
 
 ### 删除列
 
 `alter table 表名 drop 列名`
-
-
 
 # 数据操作 - [DML](#DML)
 
