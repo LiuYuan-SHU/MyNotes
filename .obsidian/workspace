@@ -7,9 +7,11 @@
         "id": "f0fcca0b44638852",
         "type": "leaf",
         "state": {
-          "type": "image",
+          "type": "markdown",
           "state": {
-            "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171236905.png"
+            "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.3_pyquery的使用.md",
+            "mode": "source",
+            "source": false
           }
         }
       }
@@ -67,7 +69,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171236905.png",
+                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.3_pyquery的使用.md",
                 "collapseAll": false,
                 "extraContext": true,
                 "sortOrder": "alphabetical",
@@ -84,7 +86,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171236905.png",
+                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.3_pyquery的使用.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -96,7 +98,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171236905.png"
+                "file": "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.3_pyquery的使用.md"
               }
             }
           },
@@ -117,15 +119,15 @@
   },
   "active": "22fc2aacf3fc1993",
   "lastOpenFiles": [
-    "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171257822.png",
+    "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.2_Beautiful_Soup的使用.md",
     "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171236905.png",
+    "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1_XPath的使用.assets/image-20220718171257822.png",
     "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1 XPath的使用.md",
     "Crawler with Python3/Python3网络爬虫开发实战/第三章——网页数据的解析提取/3.1.md",
     "Crawler with Python3/Python3网络爬虫开发实战/第二章——基本库的使用/2.5 基础爬虫案例实践.md",
     "Git&GitHub-BV1pW411A7a5/Git&GitHub.md",
     "Crawler with Python3/Python3网络爬虫开发实战/第二章——基本库的使用/2.3 正则表达式.md",
     "C++ Primer/第13章 拷贝控制.md",
-    "C++ Primer/第12章 动态内存与智能指针.md",
-    "Crawler with Python3/Python3网络爬虫开发实战/第二章——基本库的使用/2.2 requests的使用.md"
+    "C++ Primer/第12章 动态内存与智能指针.md"
   ]
 }
