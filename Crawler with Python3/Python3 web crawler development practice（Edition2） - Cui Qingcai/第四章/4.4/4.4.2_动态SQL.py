@@ -16,6 +16,7 @@ print(values)
 sql = 'INSERT INTO {table}({keys}) VALUES ({values})'.format(table=table, keys=keys, values=values)
 print(sql)
 try:
+    print(tuple(data.values()))
     if cursor.execute(sql, tuple(data.values())):
         print('Successful')
         db.commit()
