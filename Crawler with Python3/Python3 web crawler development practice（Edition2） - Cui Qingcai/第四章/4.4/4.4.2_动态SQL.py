@@ -10,8 +10,11 @@ data = {
 }
 table = 'test.students'
 keys = ', '.join(data.keys())
+print(keys)
 values = ', '.join(['%s'] * len(data))
+print(values)
 sql = 'INSERT INTO {table}({keys}) VALUES ({values})'.format(table=table, keys=keys, values=values)
+print(sql)
 try:
     if cursor.execute(sql, tuple(data.values())):
         print('Successful')
