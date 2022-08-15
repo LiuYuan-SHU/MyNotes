@@ -3,8 +3,6 @@
 ***55 Specific Ways to Improve your programs and designs. -- Scott Meyers***
 
 > Third Edition
->
-> Translated by Hou Jie
 
 ## Preface
 
@@ -28,12 +26,11 @@
 
 1. **lhs** for **left-hand side** and **rhs** for **right-hand side**
 
-
 ## Accustoming Yourself to C++
 
 ### No 1. Consider C++ a union of different parts
 
-Nowadays, C++ is multiparadigm programming language, which contains ***procedural***, ***objetc-oriented***, ***functional***, ***generic*** and ***metaprogramming***.
+> Nowadays, C++ is multiparadigm programming language, which contains ***procedural***, ***objetc-oriented***, ***functional***, ***generic*** and ***metaprogramming***.
 
 To understand C++, we need to get to know four sub-languages, which are:
 
