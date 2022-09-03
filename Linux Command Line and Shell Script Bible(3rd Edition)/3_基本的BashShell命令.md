@@ -233,7 +233,9 @@ my_script: Bourne-Again shell script text executable, ASCII text
 
 + `-n`：给所有的行加上行号
 + `-b`：给有文本的行加上行号
-+ `-t`：将制表符替换为`^I`
++ `-T：将制表符替换为`^I`
+    + 在UNIX中为`-t`
+
 
 ### `more`
 
