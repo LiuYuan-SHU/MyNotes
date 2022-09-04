@@ -1,7 +1,7 @@
 
 *.xml
 *.iml
-.obsidian/workspace
+.obsidian/
 .DS_Store
 .obsidian/workspace
 Crawler with Python3/.DS_Store
