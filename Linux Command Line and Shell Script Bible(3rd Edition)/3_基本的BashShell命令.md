@@ -1,3 +1,5 @@
+[TOC]
+
 # bash 手册
 
 > `man <cmd>`
