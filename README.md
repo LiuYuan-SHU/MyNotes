@@ -33,4 +33,7 @@
 | System Programming in UnixLinux | 来自《Unix/Linux系统编程 - K.C.Wang》，这本书的定义比较奇怪，啥都沾一些，**不是很推荐** | 暂停   |
 | tmux                            | 一些个人杂记，**不推荐**                                     | 结束   |
 | 跟我一起写makefile              | 建议直接到笔记中的链接去自己学习，同时在没有项目的时候学习这个内容没有意义 | 暂停   |
+| Linux/Linux Command Line and Shell Script | 来自同名书籍，加入了一些自己的理解，**推荐** | 进行中 |
+| Linux/Linux进程间通信 | 管道通信、信号通信、IPC，**推荐** | 进行中 |
+| TCP_IP_Internet_Programming | 出自《TCP/IP网络编程 - 尹圣雨》，**推荐** | 进行中 |
 
