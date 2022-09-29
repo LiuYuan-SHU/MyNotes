@@ -1,4 +1,4 @@
-all : hello low tcp endian inet echo
+all : hello low tcp endian inet echo thread
 
 hello :  hello_server hello_client	
 low : low_open low_read
@@ -6,6 +6,7 @@ tcp : tcp_server tcp_client
 endian : endian_conv
 inet : inet_addr inet_aton inet_ntoa
 echo : echo_server echo_client echo_client2
+thread : thread1 thread2 thread3 thread4 mutex
 
 hello_server : ./hello_server.c
 	gcc -Wall -g -o hello_server ./hello_server.c
@@ -46,6 +47,22 @@ echo_client : ./echo_client.c
 echo_client2 : ./echo_client2.c
 	gcc -Wall -g -o echo_client2 ./echo_client2.c
 
+thread1 : ./thread1.c
+	gcc -Wall -g -lpthread -o thread1 ./thread1.c
+	
+thread2 : ./thread2.c
+	gcc -Wall -g -lpthread -o thread2 ./thread2.c
+
+thread3 : ./thread3.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o thread3 ./thread3.c
+
+thread4 : ./thread4.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o thread4 ./thread4.c
+
+mutex : ./mutex.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o mutex ./mutex.c
+
+
 clean:
 	-rm -rf hello_server ./hello_server.dSYM
 	-rm -rf hello_client ./hello_client.dSYM
@@ -60,4 +77,10 @@ clean:
 	-rm -rf echo_server ./echo_server.dSYM
 	-rm -rf echo_client ./echo_client.dSYM
 	-rm -rf echo_client2 ./echo_client2.dSYM
+	-rm -rf thread1 ./thread1.dSYM
+	-rm -rf thread2 ./thread2.dSYM
+	-rm -rf thread3 ./thread3.dSYM
+	-rm -rf thread4 ./thread4.dSYM
+	-rm -rf mutex ./mutex.dSYM
+
 
