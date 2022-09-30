@@ -30,7 +30,7 @@
 | QT                              | 来自长沙顿开教育，QT入门，但笔记较少，在短期内可能不会补上   | 暂停   |
 | shell                           | 来自哔哩哔哩，可以点击笔记查看原视频链接，也可以读我的笔记，**推荐** | 暂停   |
 | STL&Generic Programming         | 来自YouTube，建议直接搜索观看，适合对STL完全没有了解，同时也想要了解一些底层实现观看 | 结束   |
-| System Programming in UnixLinux | 来自《Unix/Linux系统编程 - K.C.Wang》，这本书的定义比较奇怪，啥都沾一些，**不是很推荐** | 暂停   |
+| System Programming in UnixLinux | 来自《Unix/Linux系统编程 - K.C.Wang》，这本书的定位比较奇怪，啥都沾一些，**不是很推荐** | 暂停   |
 | tmux                            | 一些个人杂记，**不推荐**                                     | 结束   |
 | 跟我一起写makefile              | 建议直接到笔记中的链接去自己学习，同时在没有项目的时候学习这个内容没有意义 | 暂停   |
 | Linux/Linux Command Line and Shell Script | 来自同名书籍，加入了一些自己的理解，**推荐** | 进行中 |
