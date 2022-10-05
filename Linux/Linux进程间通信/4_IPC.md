@@ -258,3 +258,140 @@ end
 server --write data--> shm
 kernel --SIGUSR2--> client
 ```
+
+# 消息队列
+
+```mermaid
+flowchart LR
+
+subgraph msq[msqid_ds]
+	msg_first
+	msg_last
+	...
+	msg_ctime
+end
+
+subgraph msg1
+	n1[next]
+	t1[type, 消息队列的类型]
+	l1[length, data的长度]
+	d1[data]
+end
+
+subgraph msg2
+	n2[next]
+	t2[type]
+	l2[length]
+	d2[data]
+end
+
+subgraph msg3
+	n3[next]
+	t3[type]
+	l3[length]
+	d3[data]
+end
+
+msg_first --> msg1
+n1 --> msg2
+n2 --> msg3
+msg_last --> msg3
+```
+
+## 消息队列和管道的区别
+
+管道是管道队列，消息队列是链式队列
+
+管道中的数据没有类型，只是一个个字节；消息队列中的消息可以有类型
+
+## 消息队列的操作
+
+### 消息队列的创建和打开——`msgget`
+
+> [***`msgget.c`***](./code/IPC/msq/msgget.c)
+
+```c
+#include <sys/msg.h>
+
+/*
+ * key	和消息队列关联的key值
+ * flag	消息队列的访问权限
+ */
+// 成功：返回消息队列ID
+// 失败：返回-1
+int msgget(key_t key, int flag);
+```
+
+### 消息队列的删除——`msgctl`
+
+> [***`msgctl.c`***](./code/IPC/msq/msgctl.c)
+
+```c
+#include <sys/msg.h>
+
+/*
+ * msqid	消息队列的队列ID
+ * cmd		IPC_STAT	读取消息队列的属性，并将其保存在buf指向的缓冲区中
+ *			IPC_SET		设置消息队列的属性，这个值取自buf参数
+ *			IPC_RMID	从系统中删除消息队列
+ */
+// 成功返回0，失败返回-1
+int msgctl(int msgqid, int cmd, struct msqid_ds* buf);
+```
+
+### 消息队列的IO
+
+> [***`msgIO.c`***](./code/IPC/msq/msgIO.c)
+>
+> 通过这个测试，我们可以发现，消息队列中的消息被读取后就被清除，与共享内存读取之后依然存在截然不同
+
+#### 消息队列的写入——`msgsnd`
+
+```c
+#include <sys/msg.h>
+
+/*
+ * msqid	消息队列id
+ * msgp		指向消息的指针。常用的消息结构msgbuf：
+ *			struct msgbuf
+ *			{
+ *				long mtype;		// 消息类型
+ *				char mtext[N];	// 消息正文
+ *			};
+ * size		发送的消息正文的字节数
+ * flag		IPC_NOWAIT	消息没有发送完成函数也会立即返回
+ *			0			直到发送完成函数才返回
+ */
+// 成功返回0，失败返回-1
+int msgsnd(int msqid, const void* msgp, size_t size, int flag);
+```
+
+#### 消息队列的读出——`msgrcv`
+
+`msgrcv`函数从队列中进行查找，找到想要的类型的消息，然后返回其中的数据
+
+```c
+#include <sys/msg.h>
+
+/*
+ * msqid	消息队列id
+ * msgp		接收消息的缓冲区
+ * size		要接收的消息的字节数
+ * msgtype	0	接收消息队列中第一个消息
+ *			>0	接收消息队列中第一个类型为msgtype的消息
+ *			<0	接收消息队列中类型值不大于msgtype的绝对值且类型值最小的消息
+ * flag		0			若无消息，函数已知阻塞
+ *			IPC_NOWAIT	若无消息，进程立即返回ENOMSG
+ */
+// 成功：返回接收到消息的程度
+// 失败：返回-1
+int msgrcv(int msqid, void* msgp, size_t size, long msgtype, int flag);
+```
+
+## 非亲缘关系的消息队列使用
+
+与共享内存一样，使用`ftok`函数，并且在创建的时候，需要在`flag`位使用与运算：`IPC_CREATE | 八进制权限`
+
+同时，为了做到同一个消息队列的双向、同时收发，可以使用不同的`msgtype`值，作为一个进程的独有的消息（就像是端口一样）；同时也可以使用`fork`函数来进行多进程，做到`IO`并行
+
+
