@@ -256,7 +256,7 @@ subgraph kernel
 end
 
 server --write data--> shm
-kernel --SIGUSR2--> client
+kernel --SIGUSR1--> client
 ```
 
 # 消息队列
@@ -394,4 +394,122 @@ int msgrcv(int msqid, void* msgp, size_t size, long msgtype, int flag);
 
 同时，为了做到同一个消息队列的双向、同时收发，可以使用不同的`msgtype`值，作为一个进程的独有的消息（就像是端口一样）；同时也可以使用`fork`函数来进行多进程，做到`IO`并行
 
+# 信号灯（Semaphrone Set）
 
+## 信号灯概述
+
+信号灯不是一个单一的值，而是一组信号的集合。每一个信号灯都由`semid`来唯一标识，并且使用`semnum`来指定信号灯中的信号个数。
+
+我们可以通过`semop`
+
+******
+
+信号灯与POSIX信号量的区别：
+
++ POSIX信号量是对单个信号量的操作
++ 信号灯是对信号量的集合进行操作
+
+![内核中的信号量数组](./.assets/iShot_2022-10-05_15.33.08.png)
+
+存储在信号灯中的信号量是以数组的形式保存的
+
+## 信号灯的创建——`semget`
+
+> [***`semget.c`***](./code/IPC/sem/semget.c)
+
+```c
+#include <sys/sem.h>
+
+/*
+ * key		和信号灯关联的key值
+ * nsems	信号灯集中包含的信号灯数量
+ * semflg	信号灯集的访问权限
+ */
+// 成功：返回信号灯集ID
+// 失败：返回-1
+int semget(key_t key, int nsems, int semflg);
+```
+
+### 信号灯的修改——`semctl`
+
+#### 函数定义
+
+```c
+#include <sys/sem.h>
+
+/*
+ * semid	信号灯集ID
+ * semnum	要修改的信号编号
+ * cmd		GETVAL		获取信号的值
+ *			SETVAL		设置信号的值
+ *			IPC_RMID	从系统中删除信号灯集合
+ * ...		union semun 具体的操作，配合cmd使用
+ */
+// 成功返回0，失败返回-1
+int semctl(int semid, int semnum, int cmd, ...)
+```
+
+#### 初始化、设置信号灯的值——`SETVAL`
+
+我们使用第二个参数`semnum`来指定数组中要修改的信号量的下标，同时使用第四个参数来指定如何修改：
+
+```c
+union semun 
+{
+	int     val;            /* value for SETVAL */
+	struct  semid_ds *buf;  /* buffer for IPC_STAT & IPC_SET */
+	u_short *array;         /* array for GETALL & SETALL */
+};
+```
+
+#### 删除信号灯——`IPC_RMID`
+
+如果我们只是需要删除信号灯，第二个参数和第四个参数是没有意义的，因此第二个参数可以填0，第四个参数可以填NULL或者直接不写第四个参数。
+
+> [***semctl.c***](./code/IPC/sem/semctl.c)
+
+### 信号灯的PV操作
+
+信号灯的名字很形象：在一个信号灯中有多个信号量存储在数组中，当我们调用sedop的时候，就会根据`nops`来决定要操作这个信号灯中的多少个信号量。从而可以做到对多个线程的同时处理。
+
+```c
+#include <sys/sem.h>
+
+/*
+ * semid	信号灯ID
+ * struct sembuf
+ * {
+ *		short sem_num;	// 要操作的信号编号
+ *		short sem_op;	// 0：等待，直到信号的值变为0。在此之前，调用线程阻塞
+ *						// 1：释放资源，V操作
+ *						// -1：分配资源，P操作
+ *		short sem_flg;	// 0, IPC_NOWAIT, SEM_UNDO
+ * };
+ * nsops		要操作的信号量个数
+ */
+int semop(int semid, struct sembuf* opsptr; size_t nsops);
+```
+
+### 举个栗子
+
+#### 父子线程同步
+
+我们需要编写一个程序，其中包含一个父线程和一个子线程。需要在父线程结束操作之后才可以结束子线程
+
+##### POSIX线程同步
+
+> [***`thread_POSIX.c`***](./code/IPC/sem/thread_POSIX.c)
+
+我们让子线程在开始执行之前进行P操作，而我们初始化信号量的时候的初值为0，这导致子线程阻塞；只有当父线程结束操作之后进行V操作，子线程才能继续执行。
+
+##### IPC信号灯同步
+
+> [***`thread_sem.c`***](./code/IPC/sem/thread_sem.c)
+
+在这个例子中，我们首先通过`semctl`将信号灯中的信号的初值设置为0。然后在主线程完成循环之前，子线程尝试分配资源失败，并一直阻塞（由`sem_flg`指定）。直到主线程的循环完成，并调用`semop`，进行一次V操作，使得子线程能够进行P操作。
+
+#### 独立进程间通信
+
+> [***`server.c`](./code/IPC/sem/server.c) 和 [***`client.c`***](./code/IPC/sem/client.c)
+
+我们通过server来创建信号灯，并且在server完成打印工作之后再进行V操作，从而让client开始运行，并且完成信号灯的关闭。
