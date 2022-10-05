@@ -1,4 +1,12 @@
-all : hello low tcp endian inet echo thread
+all : 	hello \
+		low \
+		tcp \
+		endian \
+		inet \
+		echo \
+		thread \
+		semaphore \
+		chat
 
 hello :  hello_server hello_client	
 low : low_open low_read
@@ -62,6 +70,12 @@ thread4 : ./thread4.c
 mutex : ./mutex.c
 	gcc -Wall -g -D_REENTRANT -lpthread -o mutex ./mutex.c
 
+semaphore : ./semaphore.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o semaphore ./semaphore.c
+
+chat : ./chat_server.c ./chat_clnt.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o chat_server ./chat_server.c
+	gcc -Wall -g -D_REENTRANT -lpthread -o chat_clnt ./chat_clnt.c
 
 clean:
 	-rm -rf hello_server ./hello_server.dSYM
@@ -82,5 +96,8 @@ clean:
 	-rm -rf thread3 ./thread3.dSYM
 	-rm -rf thread4 ./thread4.dSYM
 	-rm -rf mutex ./mutex.dSYM
+	-rm -rf semaphore ./semaphore.dSYM
+	-rm -rf chat_server ./chat_server.dSYM
+	-rm -rf chat_clnt ./chat_clnt.dSYM
 
 
