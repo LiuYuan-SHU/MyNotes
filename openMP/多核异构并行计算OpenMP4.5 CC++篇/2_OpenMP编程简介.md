@@ -158,3 +158,191 @@ OpenMP指令的作用域分为三种情况：
 12. omp_destroy_lock：关闭一个锁并释放内存，须与 omp_ init lock 函数配对使用。需要指出的是，以 omp_set_开头的函数只能在并行区域外调用，其他函数可在并行区域和串行区域使用。
 
 # 最简单的并行程序
+
+在此给出一个简单的示例程序：
+
+```c
+#include <stdio.h>
+
+int main()
+{
+    printf("Hello 1\n");
+    printf("Hi\n");
+    printf("Hello 2\n");
+    
+    return 0;
+}
+```
+
+程序的执行流程如图所示：
+
+```mermaid
+graph LR
+1[print Hello 1] --> 2[print Hi] --> 3[print Hello 2]
+```
+
+使用OpenMP重写上述程序：
+
+```c
+#include <omp.h>
+#include <stdio.h>
+
+int main()
+{
+    printf("Hello 1\n");
+    
+    #pragma omp parallel
+    {
+        printf("Hi\n");
+    }
+    printf("Hello 2\n");
+    
+    return 0;
+}
+```
+
+我们这样编译：
+
+```shell
+g++ -fopenmp -o ttt hh.cpp
+```
+
+或者：
+
+```shell
+icpc -qopenmp -o ttt hh.cpp
+```
+
+可能的程序运行结果：
+
+```
+Hello 1
+HHi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+Hi
+i
+Hi
+Hi
+Hi
+Hello 2
+```
+
+上述程序有以下特点：
+
+```mermaid
+flowchart TD
+subgraph m1[子线程0]
+	ph1[print Hello 1]
+end
+
+subgraph children[并行区]
+	child_1[print Hi]
+	child_2[print Hi]
+	child_3[print Hi]
+	...
+	child_4[print Hi]
+end
+
+subgraph m2[子线程0]
+	ph2[print Hello 2]
+end
+
+ph1 --> children --> ph2
+```
+
+1. 在程序开头，`#include <omp.h>`是对OpenMP库函数的生命，这样在程序中不需要重新定义其数据类型
+2. 当程序开始执行时，只有主线程（线程0）存在，主线程执行程序的串行区工作，即打印`Hello 1`
+3. 遇到并行区域的结构指令`#pragma omp parallel`之后，主线程派生出其他线程来执行任务，即子线程0和其他线程组成的线程组共同打印`Hi`，由于没有显式地设置可使用的线程总数，所以默认线程总数为系统能够提供的CPU总核数。
+4. 在并行区域的结束位置后，派生的子线程进行缩并（退出或挂起），不再工作。最终只剩下主线程继续执行串行区工作，打印`Hello 2`
+
+下面是采用OpenMP实现的一个标准并行程序：
+
+```c++
+#include <omp.h>
+#include <cstdio>
+#include <stdio.h>
+
+using namespace std;
+
+int main()
+{
+        int tid, mcpu;
+
+        tid = omp_get_thread_num();
+        mcpu = omp_get_num_threads();
+
+        printf("Hello from thread %d in %d CPUs\n", tid, mcpu);
+        printf("------before parallel\n\n");
+        printf("------duiring parallel\n");
+
+        #pragma omp parallel num_threads(3) private(tid, mcpu)
+        {
+                tid = omp_get_thread_num();
+                mcpu = omp_get_num_threads();
+                printf("Hello from thread %d in %d CPUs\n", tid, mcpu);
+        }
+
+        printf("\n");
+        printf("------after parallel\n");
+        printf("Hello from thread %d in %d CPUs\n", tid, mcpu);
+
+        return 0;
+}
+```
+
+可能的运行结果：
+
+```
+Hello from thread 0 in 1 CPUs
+------before parallel
+
+------duiring parallel
+Hello from thread 0 in 3 CPUs
+Hello from thread 2 in 3 CPUs
+Hello from thread 1 in 3 CPUs
+
+------after parallel
+Hello from thread 0 in 1 CPUs
+```
+
+从程序和输出结果可以看出，上述程序具有如下特点：
+
+1. 并行程序被`#pragma omp parallel { }`分割成并行前的串行程序段、并行程序段和并行后的串行程序三大部分
+
+2. 在遇到指令`parallel(#pragma omp parallel)`之前，程序处于串行区。串行区代码仅由一个线程（即主线程，此线程的编号为0）控制，所以实际使用的线程数为1
+
+3. 在并行区域前的串行程序段中，我们有以下调用：
+
+    ```cpp
+    call omp_set_num_threads(3);
+    tid = omp_get_thread_num();
+    mcpu = omp_get_num_threads();
+    ```
+
+    其中，库函数`omp_set_num_threads（）`没有返回值，其作用是设置在并行区域内允许使用的线程总数；库函数`omp_get_thread_num()`的返回值类型为整数类型，此返回值给出当前线程的线程号；库函数`omp_get_num_threads()`的返回值为整数类型，此返回值给出执行并行块所使用的线程总数。
+
+    需要指出的是，线程总数不要大于处理器数量与每个处理器所包含的核心数目的乘积。
+
+4. 当遇到一个`parallel`指令之后，程序进入并行区域。在并行区域内，主线程派生了另外的2个线程，这样当前线程总数达到库函数`omp_set_num_threads()`所定义的3个线程。主线程也属于这个线程组，并在线程组内的线程号为0，线程组中的其他子线程分别为1,2。这3个线程分别执行了打印语句，输出了各自的子线程号。
+
+    需要指出的是，子线程的产生和执行并不是按01,2,3,4，...这样的顺序，而是具有随机性
+
+5. 各子线程表征其线程号的变量名均为`tid`，但是各子线程拥有的线程号却不相同。可以采用`default(none)`声明线程中使用的变量必须显式地指定是共享变量还是私有变量，然后采用`private`子句指定变量`tid`和`mcpu`为私有变量。这样，各子线程拥有的私有变量`tid`才不会互相影响。而各子线程通过调用函数`omp_set_num_threads()`获得当前线程组的线程数目。虽然各线程获得的`mcpu`的值是相同的，但是各线程均会对变量`mcpu`进行写操作。为了避免数据竞争，这里也将`mcpu`定义为私有变量
+
