@@ -2446,3 +2446,299 @@ if ((cx)--, (cx) != 0)
 
 ## 实验8 分析一个奇怪的程序
 
+分析下面的程序，在运行前思考：这个程序可以正确返回吗？
+
+运行后再思考：为什么是这种结果？
+
+```assembly
+assume cs:codeseg
+
+codeseg segment
+        mov ax, 4C00H       
+        int 21H
+
+start:  mov ax, 0           
+    s:  nop                 
+        nop
+
+        mov di, offset s    
+        mov si, offset s2   
+        mov ax, cs:[si]     
+        mov cs:[di], ax     
+
+    s0: jmp short s         
+
+    s1: mov ax, 0           
+        int 21H
+        mov ax, 0
+
+    s2: jmp short s1
+        nop
+    
+codeseg ends
+end start
+
+```
+
+分析：
+
+```assembly
+assume cs:codeseg
+
+codeseg segment
+        mov ax, 4C00H       ; 可以看到结束代码在这
+        int 21H
+
+start:  mov ax, 0           ; 程序从这开始运行，现在 ax 中是 0
+    s:  nop                 ; 什么都不做，占用一个指令周期
+        nop
+
+        mov di, offset s    ; di 现在是 s 的偏移地址
+        mov si, offset s2   ; si 现在是 s2 的偏移地址
+        mov ax, cs:[si]     ; 将 s2 开始的2个字节放到 ax 中
+        mov cs:[di], ax     ; 将 ax 中的内容放到 s 的开头，覆盖 nop
+
+    s0: jmp short s         ; jmp 到 s 重新运行 --> jmp short s1
+
+    s1: mov ax, 0           ; int 21H, ah = 0 --> 程序终止
+        int 21H
+        mov ax, 0
+
+    s2: jmp short s1
+        nop
+    
+codeseg ends
+end start
+
+```
+
+## ==实验9 根据材料编程==
+
+> 编程：在屏幕中间分别显示绿色、绿底红色、白底蓝色的字符串 'welcome to masm!'。
+
+我做了一点点改动，最后是这个样子：
+
+<img src="Assembly.assets/image-20221018165903021.png" alt="image-20221018165903021" style="zoom:50%;" />
+
+并且会闪烁。
+
+### 材料
+
+80 × 25彩色字符模式显示缓冲区的结构：
+
+***内存地址空间中，B8000H~BFFFFH共32KB的空间，为80 × 25 彩色字符模式的显示缓冲区。向这个地址空间写入数据，写入的内容将立即出现在显示器上。***
+
+在80 × 25彩色字符模式下，显示器可以显示25行，每行80个字符，每个字符可以有256种属性（背景色、前景色、闪烁、高亮等组合信息）。
+
+这样，一个字符在显示缓冲区中就要占两个字节，分别存放字符的ASCII码和属性。80 × 25模式下，一屏的内容在显示缓冲区中共占4000个字节。
+
+显示缓冲区分为8页，每页4KB，显示器可以显示任意一页的内容。一般情况下，显示第0页的内容。也就是说，通常情况下，B8000H~B8F9FH中的4000个字节将出现在显示器上。
+
+在一页显示缓冲区中：
+
++ 偏移000~09F对应显示器上的第一行（80个字符占160个字节）
++ 偏移0A0~13F对应显示器上的第二行
++ 偏移140~1DF对应显示器上的第三行
++ ...
++ 偏移F00~F9F对应显示器上的第25行
+
+在一行中，一个字符占两个字节的存储空间（一个字），低位字节存储字符的ASCII码，高位字节存储字符的属性。一行共有80个字符，占160个字节。即在一行中：
+
++ 00~01单元显示第1列
++ 02~03单元显示第2列
++ ...
++ 9F~9F单元显示第80列
+
+于是，***在显示缓冲区中，偶地址存放地址，奇地址存放字符颜色属性***
+
+一个在屏幕上显示的字符，具有前景（字符色）和背景（底色）两种颜色，字符还可以以高亮度和闪烁的方式显示。前景色、背景色、闪烁、高亮等信息被记录在属性字节中：
+
+```
+      7     6 5 4   3    2 1 0
+含义	BL     R G B   I    R G B
+     闪烁     背景   高亮    前景
+```
+
+### 分析
+
+题目要求在==***屏幕中间***==显示字符串：
+
+```
+welcome to nasm!
+```
+
+一共16个字符。也就是说，在160个字节中，我们需要在中间的32个字节写入数据，也就是第65~96个字节。
+
+*****
+
+我们可以分析出：
+
++ 绿色：00000010B
++ 绿底红色：00100100B
++ 白底蓝色：01110001B
+
+### Talk is cheap, show me the code
+
+```assembly
+assume cs:code, ds:data, ss:stack
+
+stack segment
+    db 4 dup('.')
+stack ends
+
+data segment
+    string          db  'welcome to masm!'  ; 16 Byte
+    green           db  00000010B           ; 1 Byte
+    g_r             db  00100100B           ; 1 Byte
+    w_b             db  01110001B           ; 1 Byte
+    place_holder    db  01110000B           ; 1 Byte
+data ends
+
+code segment
+    start:  
+        ; clear screen
+        mov ah, 15
+        int 10h
+        mov ah, 0
+        int 10h
+
+        ; init ds reg
+        mov ax, data
+        mov ds, ax
+        ; init ss/sp reg
+        mov ax, stack
+        mov ss, ax
+        mov sp, 4
+        ; init es reg
+        mov ax, 0B800H
+        mov es, ax
+
+    write_char:
+            ; write characters into lines
+
+            ; in C code:
+            ; for (int line = 0; line <= 0x140; line += 160)
+			; {
+				; const int start = 0x4A;
+				; for (int index = 0; index < 16; index++)
+				; {
+					; (B8000H + line + start + index * 2) = (string + index);	
+				; }
+			; }
+            mov cx, 0	
+        write_row:
+            push cx
+            mov si, cx
+
+            mov cx, 0
+            write_col:
+                ; (B8000H + line + start + index * 2) = (string + index);	
+                ;  es        si    idata      bx               dx
+
+                ; string + index
+                mov bx, cx
+                mov dl, ds:[bx] ; store char in dl
+                ; set color in dh
+                mov dh, 10001001B
+                add dh, cl
+                again:
+                cmp dh, 10001111B
+                jle continue
+                sub dh, 0110B
+                jmp again
+
+                continue:
+                ; index * 2
+                mov ax, cx
+                mov bl, 2
+                mul bl      ; store result in ax
+                mov bx, ax  ; store result in bx
+
+                ; move character to memory
+                mov es:[bx + si + 4AH], dx
+
+                ; check and loop
+                inc cx
+                cmp cx, 16
+                jl write_col
+
+            ; check and loop
+            pop cx
+            add cx, 160D
+            ; cmp cx, 140H
+            cmp cx, 0F9FH
+            jle write_row
+
+    exit:
+        mov ax, 4C00H
+        int 21H
+code ends
+end start
+
+```
+
+### 代码解析
+
+#### 栈段
+
+栈段只用来存双层循环的`cx`，所以4 Byte就可以
+
+#### 数据段
+
+数据段存了需要用的字符串，还有颜色配置
+
+最后还填充了一个字节，补齐20字节。
+
+#### 代码段
+
+##### `start`
+
+1. 清空屏幕
+2. 初始化寄存器
+    1. 将数据段地址移入`ds`
+    2. 将栈段地址移入`ss`，将栈的大小（4）移入`sp`
+    3. 将80 × 25彩色字符模式缓冲区地址移入`es`
+
+##### `write_char`
+
+在这部分中一起处理字符填充和颜色属性填充。将大象装入冰箱需要三步，我们将字符和属性放到缓冲区中也只需要三步：
+
+1. 取出字符
+2. 计算字符应该放到的位置
+3. 放入字符
+
+在此我们使用C代码来做一个简单的解释，主要的逻辑代码就是通过这个函数翻译过来的：
+
+```c
+for (int line = 0; line <= 0x140; line += 160)
+{
+		const int start = 0x4A;
+		for (int index = 0; index < 16; index++)
+		{
+			(B8000H + line + start + index * 2) = (string + index);	
+		}
+}
+```
+
+
+
+###### 取出字符
+
+我们利用循环变量的值（CX：0~15）取出字符，放入`dl`，再将属性装入`dh`
+
+###### 计算字符应该放到的位置
+
+```assembly
+; (B8000H + line + start + index * 2) = (string + index);	
+;  es        si    idata      bx               dx
+```
+
+我们只需要使用：
+
+```assembly
+es:[bx + si + idata]
+```
+
+的方式，就可以找到我们想要的地址了。
+
+至于为什么每次`index`乘二，这也很好理解，因为字符和属性各占一个字节，我们每次需要跳过两个字节，才能到达下一个写入的字节。
