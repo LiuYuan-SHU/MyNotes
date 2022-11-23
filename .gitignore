@@ -8,3 +8,9 @@ Crawler with Python3/.DS_Store
 Crawler with Python3/Python3 web crawler development practice（Edition2） - Cui Qingcai/.DS_Store
 Crawler with Python3/Python3 web crawler development practice（Edition2） - Cui Qingcai/2_use_of_basic_libraries/.DS_Store
 .DS_Store
+*.o
+*.json
+*.ninja
+*.cmake
+*.d
+.DS_Store
