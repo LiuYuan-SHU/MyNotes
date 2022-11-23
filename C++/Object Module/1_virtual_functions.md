@@ -271,7 +271,7 @@ In OB, the address of virtual function table of base: 0x10275c150
 
 # 4	多重继承虚函数表分析
 
-> [***4_multiple inheritance.cpp***](./1_virtualFunctionCodes/4_multiple inheritance.cpp)
+> [***4_multiple_inheritance.cpp***](./1_virtualFunctionCodes/4_multiple_inheritance.cpp)
 
 考虑这样的情况：
 
