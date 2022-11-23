@@ -356,3 +356,84 @@ size of class Derived: 16
 经过上面的分析，我们可以得到以下结论：
 
 <center><b><i>一个类，如果它继承自多个类，那么有多个虚函数表指针。<br/>在多继承中，对应各个基类的虚函数表指针按照继承顺序依次放置在类内存空间中。</i></b></center>
+
+# 5	辅助工具与`vptr`、`vtbl`的创建时机
+
+## 5.1	使用辅助工具查看虚函数表
+
++ Windows：
+
+    在Visual Studio中打开开发人员命令行工具，进入到想要查看的虚函数表对应的cpp源代码所在路径，输入：
+
+    ```powershell
+    cl /d1 reportSingleClassLayoutDerived MyProject.cpp
+    ```
+
+    1. 需要注意的是，命令`cl`的第二个字符是小写L，选项`d1`的第二个字符是数字1。
+    2. `reportClassLyaout`后面跟的是要查看的类名，在本例中，查看的是`Derived`
+    3. 最后跟的文件名就是要查看的类所在的`.cpp`源文件名
+
++ Linux：
+
+    在Linux操作系统中，我们可以使用`g++`编译器，使用选项`-fdump-class-hierarchy`选项来导出类的层次结构：
+
+    ```shell
+    g++ -fdump-class-hirearchy -fsyntax-only MyProject.cpp
+    ```
+
+    此时，系统会生成一个扩展名为`.class`的文件，该文件内就有类的布局信息。这个文件很长，我们只需要看最后的部分就可以了：
+
+    ```
+    Vtable for Derived
+    Derived::_ZTV7Derived: 9u entries
+    0     (int (*)(...))0
+    8     (int (*)(...))(& _ZTI7Derived)
+    16    (int (*)(...))Base1::func_1
+    24    (int (*)(...))Derived::func_2
+    32    (int (*)(...))Derived::func_4
+    40    (int (*)(...))-8
+    48    (int (*)(...))(& _ZTI7Derived)
+    56    (int (*)(...))Base2::func_3
+    64    (int (*)(...))Derived::_ZThn8_N7Derived6func_4Ev
+    
+    Class Derived
+       size=16 align=8
+       base size=16 base align=8
+    Derived (0x0x7fa819e5fc40) 0
+        vptr=((& Derived::_ZTV7Derived) + 16u)
+      Base1 (0x0x7fa819de4420) 0 nearly-empty
+          primary-for Derived (0x0x7fa819e5fc40)
+      Base2 (0x0x7fa819de4480) 8 nearly-empty
+          vptr=((& Derived::_ZTV7Derived) + 56u)
+    ```
+
+## 5.2	虚函数表的创建时机
+
+### `vptr`虚函数指针是何时创建的？
+
+对于有虚函数的类，在编译的时候，***编译器会往类的构造函数中安插为`vptr`负值的语句***，这是在编译期间做的。这是编译器默默在背后为程序员做的事情，程序员并不知道。
+
+当程序运行的时候，遇到创建该类对象的语句时，会执行该类的构造函数，因为构造函数中有为`vptr`（要创建的对象所属的`vptr`）赋值的语句，从而让这个对象的`vptr`有有效值。
+
+### `vtbl`虚函数表是何时创建的？
+
+实际上，编译器在**编译期间**（而不是运行期间）就给每个类确定好了对应的虚函数表`vtbl`的内容。
+
+### 进一步讨论
+
+一个C++程序，经过编译、链接的步骤，最终会生成一个可执行文件。可执行程序遵循一定的文件格式，当我们执行这个可执行文件的时候，操作系统会把这个可执行程序根据约定的格式装载到内存中并开始执行。
+
+一般来说，一个可执行程序必然有“代码段”和“数据段”用于存取各种要执行的代码和各种必要的数据。
+
+当这个可执行程序装载到内存后，它的代码段、数据段也一并被装在到了内存中，同时，操作系统还会根据一定的规则为这个可执行程序分配各种内存空间（***此处推荐《程序员的自我修养——链接、装载与库》***），例如堆栈。
+
+如果我们执行这样一段代码：
+
+```cpp
+Derived *obj = new Derived();
+```
+
+那么，这个处于栈区的指针就会指向堆区申请并构造好的空间；而这个对象中的虚函数表指针指向数据段中的虚函数表；虚函数表中的虚函数首地址指向代码段中的虚函数入口地址。
+
+<center><img src="1_virtual_functions.assets/image-20221123233331729.png" alt="image-20221123233331729" style="zoom:25%;" /></center>
+
