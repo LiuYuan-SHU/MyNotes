@@ -437,3 +437,251 @@ Derived *obj = new Derived();
 
 <center><img src="1_virtual_functions.assets/image-20221123233331729.png" alt="image-20221123233331729" style="zoom:25%;" /></center>
 
+# 6	单纯的类不纯时引发的虚函数调用问题
+
+> [***6_pure_class.cpp***](./1_virtualFunctionCodes/6_pure_class.cpp)
+
+## 单纯类的演示
+
+考虑这样一个类：
+
+```mermaid
+classDiagram
+
+class X
+X : + int x
+X : + int y
+X : + int z
+X : +X()
+X : + X(const X&)
+```
+
+我们在初始化的时候，令三个数据成员的初始值为0，并在构造函数和拷贝构造函数中分别打印信息：
+
+```C++
+X() : x(0), y(0), z(0) { cout << "Constructor" << endl;}
+
+X(const X& x) : x(x.x), y(x.y), z(x.z) { cout << "Copy Constructor" << endl; }
+```
+
+考虑这样的代码：
+
+```c++
+int main()
+{
+    X x1;
+    x1.x = 100; x1.y = 200; x1.y = 300;
+    X x2(x1);
+    cout << "X1: " << x1;
+    cout << "X2: " << x2;
+}
+```
+
+这是运行结果：
+
+```
+Constructor
+Copy Constructor
+X1: 100,	300,	0
+X2: 100,	300,	0
+```
+
+但这样有些复杂，我们可以使用效率更高的写法来编写两个构造函数：
+
+```c++
+X()
+{
+    memset(this, 0, sizeof(X));
+    cout << "Constructor" << endl;
+}
+
+X(const X& x)
+{
+    memcpy(this, &x, sizeof(X));
+    cout << "Copy Constructor" << endl;
+}
+```
+
+如果这个类像现在这么单纯，那么，上述这样使用`memset`/`memcpy`函数，并且将`this`作为第一参数的写法并没有什么问题。
+
+但是，假如这个类不那么单纯，那么上面的写法就是错的，会导致程序的崩溃。
+
+不单纯的类指的是，在某些情况下，编译器会往类中添加一些程序员看不见但真实存在的成员变量（隐藏成员变量），有了这种成员变量，类就不单纯了。
+
+## 不单纯类
+
+隐藏的成员变量都是在构造函数和拷贝构造函数的函数体之间进行的。于是，假如我们使用上面的方法：
+
+1. 在构造时，编译器给一些隐藏的成员变量赋值。但是在构造函数的函数体中，我们使用`memset`将这些赋值清零了
+2. 在拷贝构造时，往往对象与对象之间（复制的源对象和目标对象之间）的成员变量可能并不相同。但是在执行拷贝构造函数的时候，我们使用`memcpy`，就会导致成员变量值覆盖了目标对象中隐藏的成员变量值。
+
+接下来我们做一个测试：
+
+我们在`X`类中添加一个**虚析构函数**，一个**虚函数**，一个普通函数，然后在我们的`main`函数中增加一行代码，用以调用新增的虚函数：
+
+```c++
+virtual ~X()
+{
+    cout << "Destructor" << endl;
+}
+
+virtual void vir_func()
+{
+    cout << "virtual function" << endl;
+}
+
+void normal_func()
+{
+    cout << "Normal function" << endl;
+}
+```
+
+以下是运行结果：
+
+```
+Constructor
+Copy Constructor
+X1: 100,	300,	0
+X2: 100,	300,	0
+virtual function
+Destructor
+Destructor
+```
+
+看上去合情合理：第五行打印了虚函数的调用输出，6/7行打印了`x1`/`x2`的析构函数的调用输出。
+
+<center><b><i>但是，这才是最不合理的地方。</i></b></center>
+
+我们分明在构造和拷贝构造中使用了`memset`和`memcpy`！虚函数表指针是空的！我们不可能可以调用！
+
+为了验证我们的想法，我们在下面增加一些测试代码：
+
+```c++
+X* ptr_x = new X();
+ptr_x->normal_func();
+ptr_x->vir_func();
+delete ptr_x;
+```
+
+以下是运行结果：
+
+```
+Constructor
+Normal function
+
+Process finished with exit code 139 (interrupted by signal 11: SIGSEGV)
+```
+
+程序终于按照我们的希望崩溃了。
+
+于是，我们发现，***生成一个`X`的局部变量（对象在栈中），不影响通过改对象调用虚函数，也不影响对象的正常析构；但是如果使用`new`在堆中生成一个类`X`的对象实例并用对象指针指向该对象实例，再用这个对象指针调用虚函数，或者`delete`这个指针，程序的执行就会变得不正常。***
+
+至于为什么会是这样的结果，涉及到两个概念：***静态联编(static binding)***和***动态联编(dynamic binding)***。
+
+1. 静态联编：编译的时候就能确定调用的是哪个函数，把调用语句和被调用函数绑定到一起。站在汇编的角度来看，使用的是`call func`
+2. 动态联编：编译的时候无法确定调用的是哪个函数，在程序运行的时候，根据实际情况，动态地把调用语句和被调用函数绑定到一起
+
+于是，我们就可以解释为什么上面使用局部变量调用的时候可以访问到函数，而在使用指针的时候就无法访问了：局部变量调用自己的虚函数，其实和调用自己的普通函数没有任何区别，不需要用到虚函数表，因为不涉及多态；指针调用虚函数，就需要使用虚函数表来进行调用，因此调用就会出错。
+
+我们对上面的代码进行反汇编：
+
+```assembly
+Dump of assembler code for function main():
+   0x0000000000400b2d <+0>:	         push   rbp
+   0x0000000000400b2e <+1>:	         mov    rbp,rsp
+   0x0000000000400b31 <+4>:	         push   r12
+   0x0000000000400b33 <+6>:	         push   rbx
+   0x0000000000400b34 <+7>:	         sub    rsp,0x40
+   0x0000000000400b38 <+11>:	lea    rax,[rbp-0x30]
+   0x0000000000400b3c <+15>:	mov    rdi,rax
+   0x0000000000400b3f <+18>:	call   0x400ce0 <X::X()>
+   0x0000000000400b44 <+23>:	mov    DWORD PTR [rbp-0x28],0x64
+   0x0000000000400b4b <+30>:	mov    DWORD PTR [rbp-0x24],0xc8
+   0x0000000000400b52 <+37>:	mov    DWORD PTR [rbp-0x24],0x12c
+   0x0000000000400b59 <+44>:	lea    rdx,[rbp-0x30]
+   0x0000000000400b5d <+48>:	lea    rax,[rbp-0x50]
+   0x0000000000400b61 <+52>:	mov    rsi,rdx
+   0x0000000000400b64 <+55>:	mov    rdi,rax
+   0x0000000000400b67 <+58>:	call   0x400d2c <X::X(X const&)>
+   0x0000000000400b6c <+63>:	mov    esi,0x400f3c
+   0x0000000000400b71 <+68>:	mov    edi,0x602100
+   0x0000000000400b76 <+73>:	call   0x400950 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+   0x0000000000400b7b <+78>:	lea    rdx,[rbp-0x30]
+   0x0000000000400b7f <+82>:	mov    rsi,rdx
+   0x0000000000400b82 <+85>:	mov    rdi,rax
+   0x0000000000400b85 <+88>:	call   0x400aad <operator<<(std::ostream&, X const&)>
+   0x0000000000400b8a <+93>:	mov    esi,0x400f41
+   0x0000000000400b8f <+98>:	mov    edi,0x602100
+   0x0000000000400b94 <+103>:	call   0x400950 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+   0x0000000000400b99 <+108>:	lea    rdx,[rbp-0x50]
+   0x0000000000400b9d <+112>:	mov    rsi,rdx
+   0x0000000000400ba0 <+115>:	mov    rdi,rax
+   0x0000000000400ba3 <+118>:	call   0x400aad <operator<<(std::ostream&, X const&)>
+   0x0000000000400ba8 <+123>:	lea    rax,[rbp-0x30]
+   0x0000000000400bac <+127>:	mov    rdi,rax
+   0x0000000000400baf <+130>:	call   0x400dee <X::vir_func()>
+   0x0000000000400bb4 <+135>:	mov    esi,0x400f46
+   0x0000000000400bb9 <+140>:	mov    edi,0x602100
+   0x0000000000400bbe <+145>:	call   0x400950 <_ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@plt>
+   0x0000000000400bc3 <+150>:	mov    esi,0x400970
+   0x0000000000400bc8 <+155>:	mov    rdi,rax
+   0x0000000000400bcb <+158>:	call   0x400960 <_ZNSolsEPFRSoS_E@plt>
+   0x0000000000400bd0 <+163>:	mov    edi,0x18
+   0x0000000000400bd5 <+168>:	call   0x400990 <_Znwm@plt>
+   0x0000000000400bda <+173>:	mov    rbx,rax
+   0x0000000000400bdd <+176>:	mov    rdi,rbx
+   0x0000000000400be0 <+179>:	call   0x400ce0 <X::X()>
+   0x0000000000400be5 <+184>:	mov    QWORD PTR [rbp-0x18],rbx
+   0x0000000000400be9 <+188>:	mov    rax,QWORD PTR [rbp-0x18]
+   0x0000000000400bed <+192>:	mov    rdi,rax
+   0x0000000000400bf0 <+195>:	call   0x400e18 <X::normal_func()>
+   0x0000000000400bf5 <+200>:	mov    rax,QWORD PTR [rbp-0x18]
+   0x0000000000400bf9 <+204>:	mov    rax,QWORD PTR [rax]
+   0x0000000000400bfc <+207>:	add    rax,0x10
+   0x0000000000400c00 <+211>:	mov    rax,QWORD PTR [rax]
+   0x0000000000400c03 <+214>:	mov    rdx,QWORD PTR [rbp-0x18]
+   0x0000000000400c07 <+218>:	mov    rdi,rdx
+   0x0000000000400c0a <+221>:	call   rax
+   0x0000000000400c0c <+223>:	cmp    QWORD PTR [rbp-0x18],0x0
+   0x0000000000400c11 <+228>:	je     0x400c2a <main()+253>
+   0x0000000000400c13 <+230>:	mov    rax,QWORD PTR [rbp-0x18]
+   0x0000000000400c17 <+234>:	mov    rax,QWORD PTR [rax]
+   0x0000000000400c1a <+237>:	add    rax,0x8
+   0x0000000000400c1e <+241>:	mov    rax,QWORD PTR [rax]
+   0x0000000000400c21 <+244>:	mov    rdx,QWORD PTR [rbp-0x18]
+   0x0000000000400c25 <+248>:	mov    rdi,rdx
+   0x0000000000400c28 <+251>:	call   rax
+   0x0000000000400c2a <+253>:	lea    rax,[rbp-0x50]
+   0x0000000000400c2e <+257>:	mov    rdi,rax
+   0x0000000000400c31 <+260>:	call   0x400d7e <X::~X()>
+   0x0000000000400c36 <+265>:	lea    rax,[rbp-0x30]
+   0x0000000000400c3a <+269>:	mov    rdi,rax
+   0x0000000000400c3d <+272>:	call   0x400d7e <X::~X()>
+   0x0000000000400c42 <+277>:	mov    eax,0x0
+   0x0000000000400c47 <+282>:	jmp    0x400c84 <main()+343>
+   0x0000000000400c49 <+284>:	mov    r12,rax
+   0x0000000000400c4c <+287>:	mov    rdi,rbx
+   0x0000000000400c4f <+290>:	call   0x400900 <_ZdlPv@plt>
+   0x0000000000400c54 <+295>:	mov    rbx,r12
+   0x0000000000400c57 <+298>:	jmp    0x400c5c <main()+303>
+   0x0000000000400c59 <+300>:	mov    rbx,rax
+   0x0000000000400c5c <+303>:	lea    rax,[rbp-0x50]
+   0x0000000000400c60 <+307>:	mov    rdi,rax
+   0x0000000000400c63 <+310>:	call   0x400d7e <X::~X()>
+   0x0000000000400c68 <+315>:	jmp    0x400c6d <main()+320>
+   0x0000000000400c6a <+317>:	mov    rbx,rax
+   0x0000000000400c6d <+320>:	lea    rax,[rbp-0x30]
+   0x0000000000400c71 <+324>:	mov    rdi,rax
+   0x0000000000400c74 <+327>:	call   0x400d7e <X::~X()>
+   0x0000000000400c79 <+332>:	mov    rax,rbx
+   0x0000000000400c7c <+335>:	mov    rdi,rax
+   0x0000000000400c7f <+338>:	call   0x4009a0 <_Unwind_Resume@plt>
+   0x0000000000400c84 <+343>:	add    rsp,0x40
+   0x0000000000400c88 <+347>:	pop    rbx
+   0x0000000000400c89 <+348>:	pop    r12
+   0x0000000000400c8b <+350>:	pop    rbp
+   0x0000000000400c8c <+351>:	ret
+```
+
+注意观察第34行，此处我们使用局部变量直接调用虚函数`vir_func`，可以看到`call`后面跟的是一个具体的地址；但在56,65行，我们分别使用对象指针调用了`vir_func`和析构函数，可以看到`call`调用的是推算出的一个地址，我们可以猜测使用的是虚函数表中的函数指针。
+
