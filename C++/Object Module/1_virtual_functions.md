@@ -449,11 +449,11 @@ Derived *obj = new Derived();
 classDiagram
 
 class X
-X : + int x
-X : + int y
-X : + int z
+X : +int x
+X : +int y
+X : +int z
 X : +X()
-X : + X(const X&)
+X : +X(const X&)
 ```
 
 我们在初始化的时候，令三个数据成员的初始值为0，并在构造函数和拷贝构造函数中分别打印信息：
