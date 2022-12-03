@@ -4,7 +4,7 @@ struct block
 	typedef T 					value_type;
 
 	typedef value_type*			pointer;
-	typedef const value_type	const_pointer;
+	typedef const value_type*	const_pointer;
 	typedef value_type&			reference;
 	typedef const value_type&	const_reference;
 
@@ -17,8 +17,8 @@ struct block
 	iterator begin() { return data; }
 	iterator end() { return data + N; }
 
-	const_iterator begin() { return data; }
-	const_iterator end() { return data + N; }
+	const_iterator cbegin() { return data; }
+	const_iterator cend() { return data + N; }
 
 	typedef reverse_iterator<const_iterator>	const_reverse_iterator;
 	typedef reverse_iterator<iterator>			reverse_iterator;
