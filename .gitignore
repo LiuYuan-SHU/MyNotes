@@ -2,7 +2,7 @@
 *.xml
 *.iml
 .obsidian/
-.DS_Store
+**/.DS_Store
 .obsidian/workspace
 Crawler with Python3/.DS_Store
 Crawler with Python3/Python3 web crawler development practice（Edition2） - Cui Qingcai/.DS_Store
