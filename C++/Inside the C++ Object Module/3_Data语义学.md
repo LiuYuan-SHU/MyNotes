@@ -196,3 +196,95 @@ private:
 
 上述这个语言状况，仍然需要某种防御性的程序设计风格：***请总是把“nested type声明”放在类的起始处。***在上面的例子中，如果把`length`的nested typedef定义于“在class中被参考”之前，就可以确保非直觉绑定的正确性。
 
+## Data Member的布局（Data Member Layout）
+
+已知下面一组data members:
+
+```c++
+class Point3d
+{
+public:
+    // ...
+private:
+    float x;
+    static List<Point3d*>* freeList;
+    float y;
+    static const int chunkSize = 250;
+    float z;
+};
+```
+
+Nonstatic data members在类对象中的排序顺序将和其被声明的顺序一样，任何中间介入的static data members如`freeList`和`chunjSize`都不会被放进对象布局之中。在上述例子里，每一个`Point3d`对象是由三个`float`组成的，顺序是`x / y / z`。static data members存放在程序的数据段（data segment）中，和个别的类对象无关。
+
+C++ standard要求，在同一个access section（也就是`private`, `public`和`protected`等区段）中，members的排列只需符合“较晚出现的成员在类对象中有较高的地址”这一条件即可。也就是说，各个成员并不一定得连续排列。什么东西可能会介于被声明的成员之间呢？答案是边界调整（alignment）。
+
+编译器还可能会合成一些内部使用的数据成员，以支持整个对象模型。vptr就是这样的东西，目前所有的编译器都把他安插在每一个“内含virtual function的类”的成员内。vptr会被放在什么位置呢？传统上它被放在所有显式声明的成员的最后。不过如今也有一些编译器把vptr放在一个类对象的最前端。
+
+> 个人注：
+>
+> 在Darwin、Centos和Windows下编写下列测试代码：
+>
+> ```c++
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> struct Test
+> {
+> 	virtual void test() { }
+> 	int i;
+> };
+> 
+> int main()
+> {
+> 	Test t;
+> 	cout << (reinterpret_cast<char*>(&t.i) - reinterpret_cast<char*>(&t)) << endl;
+> }
+> ```
+>
+> 最后的测试结果都为8，意即，在本人的测试下，vptr被放在了对象的起始。
+
+C++秉承先前所说的“对于布局所持的放任态度”，允许编译器把那些内部产生出来的成员自由地放在任何位置上，甚至放在那些被程序员声明出来的成员之间。
+
+C++ standard也允许编译器将多个access section之间的数据成员自由排布，比不在乎它们出现在类声明中的顺序。也就是说，下面这样的声明顺序：
+
+```c++
+class Point3d
+{
+public:
+    // ...
+private:
+    float x;
+    static List<Point3d*> *freeList;
+private:
+    float y;
+    static const int chunkSize = 250;
+private:
+    float z;
+};
+```
+
+其类对象的大小和组成都和之前的相同，但是成员的排列顺序由编译器决定。编译器可以随意把`y`或者`z`放在第一个，但是到目前为止，没有编译器会这么做。
+
+目前编译器的做法都是把一个以上的access section连锁在一起（意即，把相同的访问层级的部分连接在一起），依照声明的顺序，成为一个连续区块。Access Section的多少并不会带来额外的负担。
+
+下面这个函数用于判断在一个类中的两个成员谁先出现：
+
+```c++
+template <	class class_type,
+			class data_type1,
+			class data_type2 >
+char*
+access_order (
+		data_type1 class_type::*mem1,
+		data_type2 class_type::*mem2
+		)
+{
+	assert (mem1 != mem2);
+	return
+		mem1 < mem2
+			? "member 1 occurs first"
+			: "member 2 occurs first";
+}
+```
+
