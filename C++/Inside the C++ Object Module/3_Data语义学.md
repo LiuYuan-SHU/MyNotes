@@ -97,3 +97,102 @@ C++标准并不强制规定如“base class subobjects的排列顺序”或“�
 1. 由编译器自动加上的额外数据成员，用以支持某些语言特性
 2. 因为alignment（边界调整）的需要。
 
+## Data Member的绑定（The Binding of a Data Member）
+
+考虑下面这段代码：
+
+```c++
+extern float x;
+
+class Point3d
+{
+public:
+	Point3d(float, float, float);
+    // 问题：被传回的是哪一个x？
+    float X() const { return x; }
+    void X(float new_x) const { x = new_x; }
+    // ...
+private:
+    float x, y, z;
+};
+```
+
+在今天看来，我们所有人都会认为，`Point3d::X()`返回的一定是类内的成员`x`。这个答案是正确的，但并不是从过去以来都是正确的。
+
+在C++最早的编译器上，如果在`Point3d::X()`的两个函数实例中做出参阅（取用）操作，该操作将会指向全局变量`x`。这样的绑定结果几乎不在大家的预期中。出于这样的原因，早期C++衍生出了两种防御性程序设计风格：
+
+1. 把所有的数据成员都放在class声明的起始处，以确保正确的绑定：
+
+    ```c++
+    class Point3d
+    {
+    	// 防御性程序风格 #1
+        // 在class声明起始处先放置所有的数据成员
+        float x, y, z;
+    public:
+        float X() const { return x; }
+    };
+    ```
+
+2. 把所有的内联函数（inline function），不管大小，都放在class声明之外：
+
+    ```c++
+    class Point3d
+    {
+    public:
+        // 防御性程序设计风格 #2
+        // 把所有的inlines都转移到class之外
+        Point3d();
+        float X() const;
+        void X( float ) const;
+    };
+    
+    inline float Point3d::X() const
+    {
+        return x;
+    }
+    ```
+
+这些程序设计风格事实上到今天还仍然存在，虽然事到如今已经不再需要。这个古老的语言规则被称为“member rewriting rule”，大意是“一个inline函数实体，在整个class声明未被完全看见之前，是不会被评估求值（evaluated）的”。C++ standard以“member scope resolution rules”来精炼这个规则，其效果是，如果一个inline函数在类声明之后立刻被定义的话，那么就还是对其评估求值（evaluate）。也就是说，当一个人写下以下的代码：
+
+```c++
+extern int x;
+
+class Point3d
+{
+	// 对于函数本体的分析将延迟，直至
+    // class声明的右大括号出现才开始
+    float X() const { return x; }
+private:
+    float x;
+    // ...
+};
+
+// 事实上，分析在这里进行
+```
+
+对成员函数本体的分析，会直到整个类的声明都出现了才开始。因此在一个inline member function躯体之内的一个数据成员绑定操作，会在一个类声明完成之后才会进行。
+
+然而，上述讨论对于成员函数的参数列表（argument list）并不为成立。Argument list中的名称还是会在它们第一次被编译器读取到的时候被适当地决议（resolved）完成。因此在extern和nested type names之间的非直觉绑定操作还是会发生。
+
+举个例子，在下面的这个例子中，`length`的类型在两个成员函数签名（member function signatures）中都被决议（resolve）为global typedef，也就是`int`。当后续再有`length`的nested typedef声明出现的时候，C++ standard就把稍早的绑定标识为非法：
+
+```c++
+typedef int length;
+
+class Point3d
+{
+public:
+    void mumble(length val) { _val = val; }
+    length mumble() { return _val; }
+	// ...
+private:
+    // length必须在“本类对它的第一个参考操作”之前被看见
+    // 这样的声明将使之前的参考操作不合法
+    typedef float length;
+    length _val;
+};
+```
+
+上述这个语言状况，仍然需要某种防御性的程序设计风格：***请总是把“nested type声明”放在类的起始处。***在上面的例子中，如果把`length`的nested typedef定义于“在class中被参考”之前，就可以确保非直觉绑定的正确性。
+
