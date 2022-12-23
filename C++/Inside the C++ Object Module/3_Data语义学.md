@@ -432,3 +432,453 @@ Pt3d->_x = 0.0;
 
 ## 3.4 “继承”与Data Member
 
+在C++继承模型中，一个派生类对象所表现出来的东西，是其自己的成员再加上基类的成员的总和。至于派生类成员和基类成员的排列顺序，则并未在C++ standard中强制制定；理论上编译器可以自由安排之。在大部分编译器上头，基类成员总是先出现，但是虚基类的除外（**一般而言，任何一条通则一旦碰上虚基类就没辙了，此处亦不例外。**）
+
+> 这是我的测试代码和结果：
+>
+> ```c++
+> #include <cstdio>
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> struct Base
+> {
+> 	int i;
+> };
+> 
+> struct Derive :  public Base
+> {
+> 	int j;
+> };
+> 
+> int main()
+> {
+> 	Derive d;
+> 
+> 	printf("Address offset of d.i: %p\n", &Derive::i);
+> 	printf("Address offset of d.j: %p\n", &Derive::j);
+> }
+> ```
+>
+> 测试结果：
+>
+> ```
+> Address offset of d.i: 0x0
+> Address offset of d.j: 0x4
+> ```
+
+******
+
+下面考虑这样的问题：
+
+有两个类，`Point2d`和`Point3d`，我们在设计的时候可以有多种设计方法：
+
+***设计方法一：***
+
+```mermaid
+classDiagram
+class Point2d {
+	float x
+	float y
+}
+
+class Point3d {
+	float x
+	float y
+	float z
+}
+```
+
+***设计方法二：***
+
+```mermaid
+classDiagram
+class Point2d {
+	float x
+	float y
+}
+
+Point2d <|-- Point3d
+
+class Point3d {
+	float z
+}
+```
+
+***设计方法三：***
+
+```mermaid
+classDiagram
+
+Point1d <|-- Point2d
+Point2d <|-- Point3d
+
+class Point1d {
+	float x
+}
+
+class Point2d {
+	float y
+}
+
+class Point3d {
+	float z
+}
+```
+
+这三种结构有什么不同？下面将围绕“单一继承且不含虚函数”、“单一继承并含虚函数”、“多重继承”、“虚拟继承”等四种情况。
+
+### 只要继承不要多态（Inheritance without Polymorphism）
+
+一般而言，具体继承（即，相反于虚继承）并不会增加空间或存取时间上的额外负担。
+
+```mermaid
+classDiagram
+class Point2d {
+	float x
+	float y
+}
+
+Point2d <|-- Point3d
+
+class Point3d {
+	float z
+}
+```
+
+这样设计的好处就是可以把管理x和y坐标代码的程序代码局部化（限制于`Point2d`之中）。此外，这个设计可以明显表现出两个抽象类之间的紧密关系。
+
+******
+
+新手在设计的时候会犯两个常见错误：
+
+1. 把两个原本独立不相干的类凑成一对“type/subtype”，并带有继承关系。用上面的例子来说，就是：
+
+    ```mermaid
+    classDiagram
+    Point2d <|-- Point3d
+    class Point3d {
+    	Point2d p
+    	float z
+    }
+    ```
+
+    经验不足的人可能会重复设计一些相同操作的函数。例如，在`Point2d`中没有提供内联的`operator+=`，导致在`Point3d`中重复设计或者使用函数调用而造成效率下降。
+
+2. 第二个常见的问题是，把一个类分解为两层或更多层，有可能为了“为了抽象而抽象”，而没有任何的实际意义。
+
+    就比如：
+
+    ```mermaid
+    classDiagram
+    
+    Point1d <|-- Point2d
+    Point2d <|-- Point3d
+    
+    class Point1d {
+    	float x
+    }
+    
+    class Point2d {
+    	float y
+    }
+    
+    class Point3d {
+    	float z
+    }
+    ```
+
+    但这样的设计就是好的吗？不见得，有的时候，可能会导致不必要的内存占用。
+
+    对于这样的类：
+
+    ```mermaid
+    classDiagram
+    class Concrete {
+    	int val
+    	char bit1
+    	char bit2
+    	char bit3
+    }
+    ```
+
+    它的大小是8Byte：
+    $$
+    4Byte + 1Byte * 3 + Alignment(1Byte) = 8Byte
+    $$
+    而对于这样的设计：
+
+    ```mermaid
+    classDiagram
+    
+    Concrete1 <|-- Concrete2
+    Concrete2 <|-- Concrete3
+    
+    class Concrete1 {
+    	int val
+    	char bit1
+    }
+    
+    class Concrete2 {
+    	char bit2
+    }
+    
+    class Concrete3 {
+    	char bit3
+    }
+    ```
+
+    现在，`Concrete3`的大小是多少？
+    $$
+    Sizeof\: Concrete1 = 4Byte + 1 Byte + Alighment = 8Byte \\
+    Sizeof\: Concrete2 = Sizeof\: Concrete1 + 1 Byte + Alighment = 12Byte \\
+    Sizeof\: Concrete3 = Sizeof\: Concrete2 + 1 Byte + Alighment = 16Byte
+    $$
+    可以看到，这样的设计的空间占用相较之前增加了$100\%$。
+
+    ******
+
+    但是，编译器为什么要这样去设计？为什么不能在派生类中调整内存分布，让`bit1`和`bit2`紧密排布，这样大小就依然是8Byte：
+    $$
+    4Byte + 1Byte(bit1) + Byte(bit2) + Alignment = 8
+    $$
+    这样做是有理由的。让我们声明以下指针：
+
+    ```c++
+    Concrete2 *pc2;
+    Concrete1 *pc1_1, *pc1_2;
+    ```
+
+    其中`pc1_1`和`pc1_2`都可以指向前述的三个类中的任意一种对象。
+
+    现在我们编写这样一段代码：
+
+    ```c++
+    pc1_1 = &(Concrete());	// 现在pc1_1指向一个Concrete1类型的对象
+    pc1_2 = &(Concrete());	// 现在pc1_2指向一个Concrete2类型的对象
+    *pc1_1 = *pc1_2;		// 这会发生什么？
+    ```
+
+    如果编译器把基类对象原本的填补空间让出来给派生类成员使用，像这样：
+
+    <img src="3_Data语义学.assets/image-20221223113356570.png" alt="image-20221223113356570" style="zoom: 25%;" />
+
+那么在拷贝的时候，就会这样：
+
+<img src="3_Data语义学.assets/image-20221223113506936.png" alt="image-20221223113506936" style="zoom:25%;" />
+
+很明显，原本作为填充字节的地方被放了`bit2`，这显然不是我们期望的。这就是为什么编译器宁愿浪费空间，也要把这里空出来的原因。而这也是为什么我们在设计类的时候不能一味追求抽象的理由。
+
+### 加上多态（Adding Polymorphism）
+
+如果我要处理一个坐标点，而不打算在乎它是一个`Point2d`还是`Point3d`实例，那么我们需要再继承关系中提供一个虚函数接口。这样，我们在面对不同类型的对象的时候，调用相同的函数接口，就可以实现不同的功能。这样的弹性，正是面向对象程序设计的中心。支持这样的弹性，就会为我们的类带来空间和存取时间上的负担：
+
++ 导入一个和`Point2d`有关的虚函数表（virtual table），用来存放它所声明的一个虚函数的地址。这个表的元素个数一般而言是被声明的虚函数的个数，再加上一个或两个元素（用于支持runtime type identification）
++ 在每一个类对象中导入一个vptr，提供执行期的链接，使每一个对象能够找到相应的虚函数表
++ 加强构造函数，使它能够为虚函数表指针设定初值，让它指向类所对应的虚函数表。这可能意味着在派生类和每一个基类的构造函数中，重新设定vptr的值。其情况视编译器优化的积极性而定。
++ 加强析构函数，使他能够抹除“指向类相关的虚函数表”的vptr。
+
+这些额外负担带来的冲击程度视被处理的对象的个数和生命周期而定，也视“对这些对象做多态程序设计所得的利益”而定。
+
+把vptr放在类对象的前面还是后面，都会有自己的优势和缺点。
+
++ 曾经的cfront选择将vptr放在类对象的后面，这样做的好处是，可以保留基类的C结构体的对象布局，因而我们可以在C代码中使用代码。这种做法在C++最初问世的时候，被许多人采用
++ 到了C++2.0，开始支持虚拟继承一级抽象类，并且由于面向对象范式（OO paradigm）的兴起，有些编译器开始把vptr放在类对象的起头处（比如Microsoft的第一个编译器，就十分主张这种做法）。这样做的好处是，对于“在多重继承之下，通过指向class members的指针调用virtual function”，会带来一些帮助。否则，不仅“从类对象起点开始计算”的offset必须在执行期就准备好，甚至与类vptr之间的offset也必须计算好。当然，vptr放在前端，付出的代价就是丧失了C代码的兼容性。
+
+### 多重继承（Multiple Inheritance）
+
+单一继承提供了一种“自然多态（natural polymorphism）”形式，是关于类体系中的base type和derived type之间的转换。
+
+在单继承下，派生类对象到基类对象的转换是非常简单的，把一个派生类对象指定给基类的指针或者引用，这个操作并不需要编译器去调停或者修改地址。它可以很自然的发生，并且提供了最佳的执行效率。
+
+但是，如果派生类对象的起始处有vptr，而基类对象没有，这就会导致一些问题。这种情况下，把一个派生类对象转换给基类的指针或者引用，就需要编译器的介入，用以调整地址。在既是多重继承又是虚拟继承的情况下，编译器的介入更有必要。
+
+多继承不像单一继承，不容易模塑出其模型。比如这样的一个类：
+
+```mermaid
+classDiagram
+Point2d <|-- Point3d
+Point3d <|-- Vertex3d
+Vertex <|-- Vertex3d
+```
+
+多重继承的问题主要发生于派生类对象和其第二或后继的基类对象之间的转换。不论是直接转换：
+
+```c++
+extern void mumble(const Vertex&);
+Vertex3d v;
+... 
+mumble(v);
+```
+
+或者是经由其所支持的虚函数机制做转换。
+
+对于一个多重派生对象，将其地址指定给“最左端”（也就是第一个）基类的指针，情况和单继承的时候相同，因为二者都指向相同的起始地址。需要付出的只有地址的制定操作而已。至于第二个或者后继的基类的地址制定操作，则需要将地址进行修改：加上或者减去介于中间的基类子对象的大小。例如：
+
+```c++
+Vertex3d v3d;
+Vertex* pv = &v3d;
+```
+
+则需要这样的转换：
+
+```c++
+// 虚拟C++代码
+pv = (Vertex*)(((char*)&v3d) + sizeof(Point3d));
+```
+
+而如果是这样的代码：
+
+```c++
+Vertex3d *pv3d;
+Vertex *pv;
+pv = pv3d;
+```
+
+那么就不能像上面一样做简单的转换，而是需要进行一次判断：
+
+```c++
+pv = pv3d
+   ? (Vertex*)((char*)pv3d + sizeof(Point3d))
+   : 0;
+```
+
+C++ standard并没有要求`Vertex3d`中的基类`Point3d`和`Vertex`有特定的排列顺序。原始的cfront编译器是根据声明顺序来配列它们的。目前各编译器仍然以此方式完成多基类的布局。（但是如果加上虚继承，事情就不太一样了）
+
+某些编译器设计了一种优化技术，只要第二个或者后继的基类声明了虚函数，而第一个基类没有，就会调换基类的顺序。这样可以在派生类对象中少产生一个vptr。但是这项技术并未得到全球厂商的认可，因此并不普及。
+
+如果我们要存取基类的数据对象，将会怎样呢？要付出额外的成本吗？答案是否定的，即使是多继承。members的位置在编译的时候就已经固定了，因此存取members只是简单的offset运算，就像单一继承一样简单——不管是经由一个指针、一个引用或者是一个对象来存取。
+
+### 虚继承（Virtual Inheritance）
+
+多继承的一个语义上的副作用就是，它必须支持某种形式的“shared subobjec继承”。典型的一个例子就是最早的`iostream`库。
+
+```mermaid
+classDiagram
+ios <|-- ostream
+ios <|-- istream
+ostream <|-- iostream
+istream <|-- iostream
+```
+
+为了解决`ostream`和`istream`中都含有一份`ios`，但是`iostream`中只需要一份的问题，语言层面就引入了虚继承。
+
+要在编译器中支持虚拟继承，实在是难度颇高。在上述`iostream`的例子中，实现技术的挑战在于，要找到一个足够有效的方法，将`istream`和`ostream`各自维护的一个`ios`子对象，转换成一个由`iostream`唯一维护的一个子对象，并且还可以保存基类和派生类的指针（以及引用）之间的多态指定操作（polymorphism assignments）。
+
+一般的实现方法如下所述。Class内如果包含一个或者多个virtual base class subobjects，像`istream`那样，将被分割为两部分：一个不变区域和一个共享区域。不变区域中的数据，不管后继如何演化，总是有固定的offset（从object开头算起），所以这一部分的内容可以被直接存取。至于共享区域，所表现的就是virtual base class subobject。这一部分的数据，其位置会因为每次的派生操作而有变化，所以它们只可以被简介存取。各家编译器实现技术之间的差异就在于间接存取的方法不同。以下说明三种主流策略。下面是`Vertex3d`虚拟继承的层次结构：
+
+```mermaid
+classDiagram
+Point2d <|-- Vertex
+Point2d <|-- Point3d
+Vertex <|-- Vertex3d
+Point3d <|-- Vertex3d
+
+class Point2d {
+	#float _x
+	#float _y
+}
+
+class Vertex {
+	#Vertex *next
+}
+
+class Point3d {
+	#float _z
+}
+
+class Vertex3d {
+	#float mumble
+}
+```
+
+
+
+```c++
+class Point2d
+{
+public:
+	// ...
+protected:
+	float _x, _y;
+};
+
+class Vertex : public virtual Point2d
+{
+public:
+	// ...
+protected:
+	Vertex *next;
+};
+
+class Point3d : public virtual Point2d
+{
+public:
+	// ...
+protected:
+	float _z;
+};
+
+class Vertex3d :
+	public Vertex, public Point3d
+{
+public:
+	// ...
+protected:
+	float mumble;
+};
+```
+
+一般的布局策略是先安排好derived class不变的部分，然后再建立其共享部分。
+
+然而，这中间存在着一个问题：如何能够存取class的共享部分？cfront编译器会在每一个派生类对象中安排一些指针，每个指针指向一个虚基类。要存取继承得到的虚基类成员，可以通过相关指针间接完成。
+
+举个例子，如果我们有以下的`Point3d`运算符：
+
+```c++
+void Point3d::operator+=(const Point3d &rhs)
+{
+    _x += rhs._x;
+    _y += rhs._y;
+    _z += rhs._z;
+}
+```
+
+在cfront策略之下，这个运算符会被内部转换为：
+
+```c++
+// 虚拟C++代码
+__vbcPoint2d->_x += rhs.__vbcPoint2d->_x;	// vbc为virtual base class
+__vbcPoint2d->_y += rhs.__vbcPoint2d->_y;
+_z += rhs._z;
+```
+
+而一个派生类和一个基类的实例之间的转换，像这样：
+
+```c++
+Point2s *p2d = pv3d;
+```
+
+在cfront实现模型之下，会变成：
+
+```c++
+// 虚拟C++代码
+Point2d *p2d = pv3d ? pv3d->__vbcPoint2d : 0;
+```
+
+这样的实现模型有两个主要的缺点：
+
+1. 每一个对象必须针对其每一个virtual base class背负一个额外的指针。然而理想上我们却希望类对象有固定的负担，不因为其virtual base classes的个数而有所变化。
+2. 由于虚拟继承串链的加长，导致间接存取层次的增加。这里的意思是，如果我们有三层虚拟派生，我们就需要三次间接存取（经由三个virtual base class指针）。然而理想上我们却希望有固定的存取时间，不因为虚拟派生的深度而变化。
+
+第二个问题有一个简单的解决方法。它们经由拷贝操作得到所有的nested virtual base class指针，放到derived class object之中。这就解决了“固定存取时间”的问题，虽然付出了一些空间上的代价。
+
+至于第一个问题，一般而言有两个解决方法。
+
+1. Microsoft编译器引入所谓的virtual base class table。每一个类对象如果有一个或多个virtual base classes，就会安排由编译器安插一个指针，指向virtual base class table。至于真正的virtual base class指针，当然是被放在该表格中。
+2. 第二个解决方法，是在virtual function table中放置virtual base class的offset。
+
+上述每一种方法都是一种实现模型，而不是一种标准。每一种模型都是用来解决“存取shared subobject内的数据”（其位置会因为每次派生操作而有变化）所引发的问题。由于对virtual base classes的支持带来额外的负担以及高度的复杂性，每一种实现模型多少有点不同。
+
+一般而言，虚基类最有效的一种运用方式就是：***一个抽象的虚基类，没有任何的数据成员***
