@@ -2,6 +2,8 @@
 
 <p align="right">—— The semantics of Data</p>
 
+[TOC]
+
 ## 引入
 
 > 在这一章中，类的数据成员以及类的层次结构式中心议题。一个类的数据成员，一般而言，可以表现这个类在程序执行时的某种状态。非静态数据成员（nonstatic data members）放置的是“个别的类对象”感兴趣的数据。静态数据成员（static data members）则放置的是所有类对象都感兴趣的数据。
