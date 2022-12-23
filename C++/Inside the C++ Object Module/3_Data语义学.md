@@ -288,3 +288,147 @@ access_order (
 }
 ```
 
+## 3.3 Data Member的存取
+
+> 已知下面这段程序代码：
+>
+> ```c++
+> Point3d origin;
+> origin.x = 0.0;
+> ```
+> 
+> 	本小节将围绕`x`的存取成本展开。
+
+`x`的存取成本取决于`x`如何声明。`x`可能是个static member，可能是个nonstatic member。Point3d可能是个独立（非派生）的类，也可能是从另一个单一的基类派生而来的；虽然可能性不高，但它甚至可能是从多继承或者是虚继承而来的。
+
+### Static Data Members
+
+静态数据成员，会被编译器提出类外，被视为一个全局变量（但只会在类的生命周期之内可见）。每一个成员的存取许可，以及与类的关联，并不会招致任何空间上或执行时间上的额外负担——不论是在个别的类对象还是在静态数据成员本身。
+
+每一个静态数据成员只有一个实例，存放在程序的数据段中。每次程序参阅（取用）静态成员的时候，就会被内部转化为对该唯一`extern`实例的直接参考操作。
+
+如果有两个类，每一个都声明了一个静态成员`freeList`，那么当它们都被放在程序的数据段时，就会导致名称冲突。编译器的解决方法是暗中对每一个静态数据成员编码（这种手法有个很美的名称——name-mangling），以获得一个独一无二的程序识别代码。有多少个编译器，就有多少种name-mangling做法。通常不外乎是表格、文法措辞等
+
+任何name-mangling都有两个重点：
+
+1. 一个算法，推导出独一无二的名称
+2. 万一编译系统（或环境工具）必须和使用者交谈，那些独一无二的名称可以轻易被推导回到原来的名称
+
+### Nonstatic Data Members
+
+非静态数据成员直接存放在每一个类对象之中。除非经由显式（explicit）或隐式（implicit）类对象，否则没有办法直接存取它们。只要程序员在一个成员函数中直接处理一个非静态数据成员，所谓的隐式类对象就会产生。
+
+想要对一个非静态数据成员进行存取操作，编译器需要把类对象的起始地址加上数据成员的偏移位置（offset）。
+
+> 下面的测试用例为自己编写，书中的用例和解释与现在流行的编译器不同，不做采用。
+
+例如：
+
+```c++
+#include <iostream>
+
+using namespace std;
+
+struct Test
+{
+	char c;
+	short s;
+	int i;
+	double d;
+};
+
+int main()
+{
+	Test t;
+
+	printf("Address of t: %p\n", &t);
+	printf("Address of t.c: %p, address offset of c: %p\n", &t.c, &Test::c);
+	printf("Address of t.s: %p, address offset of s: %p\n", &t.s, &Test::s);
+	printf("Address of t.i: %p, address offset of i: %p\n", &t.i, &Test::i);
+	printf("Address of t.d: %p, address offset of d: %p\n", &t.d, &Test::d);
+}
+```
+
+运行结果为：
+
+```
+Address of t: 0x16d8f3120
+Address of t.c: 0x16d8f3120, address offset of c: 0x0
+Address of t.s: 0x16d8f3122, address offset of s: 0x2
+Address of t.i: 0x16d8f3124, address offset of i: 0x4
+Address of t.d: 0x16d8f3128, address offset of d: 0x8
+```
+
+每一个非静态数据成员的偏移位置（offset）在编译时期即可获知，甚至如何成员属于一个基类子对象也是如此。因此，存取一个非静态数据成员，其效率和存取一个C结构体成员或者一个非派生类的类的成员是一样的。
+
+### 虚继承而来的数据成员
+
+虚继承将为“经由基类子对象存取类成员”导入一层新的间接性（即多存取一次）。
+
+对于下面的代码：
+
+```c++
+Point3d *pt3d;
+Pt3d->_x = 0.0;
+```
+
+其执行效率在`_x`是一个结构体成员、一个类成员、单一继承、多重继承的情况下都是相同的。但如果`_x`是一个虚基类的成员，存取速度会稍慢一点。
+
+> 对于这段话，我也存疑。
+>
+> 以下是我编写的测试代码：
+>
+> ```c++
+> #include <cstdio>
+> #include <iostream>
+> 
+> using namespace std;
+> 
+> struct Base
+> {
+> 	int i;
+> };
+> 
+> struct Derive : virtual public Base
+> {
+> 
+> };
+> 
+> struct Test
+> {
+> 	int i;
+> };
+> 
+> int main()
+> {
+> 	Derive d;
+> 	d.i = 1;
+> 
+> 	Test t;
+> 	t.i = 1;
+> 
+> 	printf("Address of d: %p\n", &d);
+> 	printf("Address of d.i: %p, address offset of i: %p\n", &d.i, &Derive::i);
+> 	printf("Address offset of Base: %p\n", &Derive::Base::i);
+> }
+> ```
+>
+> 以下是运行结果：
+>
+> ```
+> Address of d: 0x7ffc4eda2230
+> Address of d.i: 0x7ffc4eda2238, address offset of i: (nil)
+> Address offset of Base: (nil)
+> ```
+>
+> 以下赋值语句的Linux反汇编码：
+>
+> ```assembly
+> 0x0000000000400781 <+20>:	mov    DWORD PTR [rbp-0x8],0x1
+> 0x0000000000400788 <+27>:	mov    DWORD PTR [rbp-0x20],0x1
+> ```
+>
+> 可见，存取效率并无区别。
+
+## 3.4 “继承”与Data Member
+
