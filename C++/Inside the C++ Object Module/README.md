@@ -4,6 +4,8 @@
 >
 > by Stanley B. Lippman
 
+[TOC]
+
 ## 什么是C++对象模型？
 
 1. 语言中直接支持面向对象程序设计的部分
@@ -27,3 +29,10 @@
 
 第七章，***On the Cusp of the Object Module***，专注于exception handling，template support，runtime type identification
 
+## 个人笔记
+
+在阅读本书的时候，有一些地方并不能理解地很清楚，也有的地方已经与当前的情况产生了脱节。
+
+对于脱节的地方，如果有能力，我选择给出现在的做法和测试代码
+
+对于完全不懂的地方，我选择跳过，交由未来重读补充
