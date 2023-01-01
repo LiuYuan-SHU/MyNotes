@@ -14,3 +14,5 @@ Crawler with Python3/Python3 web crawler development practice（Edition2） - Cu
 *.cmake
 *.d
 .DS_Store
+**/a.out
+**/*.dSYM
