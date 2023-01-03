@@ -18,5 +18,6 @@
   "vimMode": false,
   "showUnsupportedFiles": true,
   "spellcheck": true,
-  "fileSortOrder": "alphabetical"
+  "fileSortOrder": "alphabetical",
+  "attachmentFolderPath": "./.assets"
 }
