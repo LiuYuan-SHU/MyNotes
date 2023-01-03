@@ -50,5 +50,5 @@ void Test::operator delete(void *phead) {
 
 int Test::_count = 0;
 int Test::_mallocCount = 0;
-Test *_freePos = nullptr;
+Test *Test::_freePos = nullptr;
 int Test::_trunkCount = 5;
