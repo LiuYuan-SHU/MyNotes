@@ -3,42 +3,33 @@
 
 using namespace std;
 
-class Test
-{
+class Test {
 public:
-    Test() : _val(0) 
-    { 
-        cout << "Test::" << __func__ << endl;
-    }
-    ~Test() 
-    {
-        cout << "Test::" << __func__ << endl;
-    }
+  Test() : _val(0) { cout << "Test::" << __func__ << endl; }
+  ~Test() { cout << "Test::" << __func__ << endl; }
 
-    static void* operator new(size_t size)
-    {
-        cout << "Test::" << __func__ << endl;
+  static void *operator new(size_t size) {
+    cout << "Test::" << __func__ << endl;
 
-        return malloc(size);
-    }
+    return malloc(size);
+  }
 
-    static void operator delete(void* p)
-    {
-        cout << "Test::" << __func__ << endl;
+  static void operator delete(void *p) {
+    cout << "Test::" << __func__ << endl;
 
-        free(p);
-    }
+    free(p);
+  }
+
 private:
-    int _val;
+  int _val;
 };
 
-int main()
-{
-    // call overloaded new/delete
-    Test *test1 = new Test();
-    delete test1;
+int main() {
+  // call overloaded new/delete
+  Test *test1 = new Test();
+  delete test1;
 
-    // call global new/delete
-    Test *test2 = ::new Test();
-    ::delete test2;
+  // call global new/delete
+  Test *test2 = ::new Test();
+  ::delete test2;
 }
