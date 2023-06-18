@@ -74,7 +74,7 @@ int main(int ac, char* av[])
 
     接下来, 调用`store`/`parse_command_line`/`notify`来将在命令行中的参数全部保存到`vm`中.
 
-    保存之后, 就可以使用这些选项了. `variable_map`能像`std::map`一样使用, 只是必须像代码示例中那样使用. 如果选项的实际值和`as`中指定的值类型不一样, 就会抛出一个异常.
+    保存之后, 就可以使用这些选项了. `variables_map`能像`std::map`一样使用, 只是必须像代码示例中那样使用. 如果选项的实际值和`as`中指定的值类型不一样, 就会抛出一个异常.
 
 ## 选项的描述与细节 - options_decriptions.cpp
 
@@ -103,7 +103,7 @@ desc.add_options()
 
 2. `optimization`展示了两个新的特性. 
 
-    1. 我们传入了`opt`的地址, 在将命令行的值通过`notify`之后保存到`variable_map`之后, 命令行中的`optimization`的值也会被保存到`opt`之中
+    1. 我们传入了`opt`的地址, 在将命令行的值通过`notify`之后保存到`variables_map`之后, 命令行中的`optimization`的值也会被保存到`opt`之中
     2. 我们使用`10`作为`opt`的默认值
 
 3. `include-path`选项使用`include-path,I`作为选项的名称, 能够接受两种不同的调用方式:
@@ -320,7 +320,7 @@ hidden.add_options()
 
 但是，在命令行和配置文件中都指定了相同的值，会发生什么？
 
-程序会选择已经被`store`存储到`variable_map`中的值, 代码中先对命令行的选项调用`store`, 再对配置文件调用`store`, 于是实际的运行效果是采用命令行中的选项。这就是`--optimization`选项的应对方式。
+程序会选择已经被`store`存储到`variables_map`中的值, 代码中先对命令行的选项调用`store`, 再对配置文件调用`store`, 于是实际的运行效果是采用命令行中的选项。这就是`--optimization`选项的应对方式。
 
 对于需要被组合的选项，如“include-file”，这些值将被合并。
 
@@ -497,7 +497,7 @@ Program Options 库有 3 个核心组件:
 
 + 选项描述组件, 其描述了允许的选项, 以及程序如何处理这些选项, 例如`options_description`类
 + 分析组件, 其利用选项描述组件中的信息来查找参数中的选项名称以及他们的值并且将其返回, 例如`parse_command_line`函数
-+ 存储组件, 其提供了访问选项的值的接口. 其同样将字符串转换为分析组件希望的 C++类型, 例如`variable_map`类
++ 存储组件, 其提供了访问选项的值的接口. 其同样将字符串转换为分析组件希望的 C++类型, 例如`variables_map`类
 
 ## 选项描述组件
 
@@ -706,3 +706,169 @@ pd.add("output-file", 2).add("input-file", -1);
 
 需要注意的是, positional_options_description类只指定了从位置到名称的翻译，选项名称仍然应该用options_description类的一个实例来注册。
 
+## 分析器组件
+
+分析器组件将输入源分解为$(name, value)$对. 每个解析器都会寻找可能的选项，并查阅选项描述组件，以确定该选项是否已知以及如何指定其值。
+
+比较简单的情况是, 名称已经被显式地指定, 这样库就可以决定这个选项是否已知. 
+
++ 如果选项已知, `value_semantic`示例就会决定这个选项的值会被如何指定. 
++ 如果选项未知, 就会抛出一个异常.
+
+或者是, 有的选项只要被指定, 那么就是`true`, 这个时候需要确定用户没有输入了多余的值, 并返回一个新的$(name, value)$对.
+
+要调用分析器, 通常需要调用一个函数, 将选项描述和输入源(命令行参数或者是配置文件, 或者别的什么东西)传入. 分析的结果将会以`parsed_options`实例的形式返回. 通常, 这个实例会被直接传入存储组件. 但是, 它也可以被直接使用, 或者进行一些额外处理. 
+
+上述模式有三个例外, 它们都与命令行的传统用法有关。虽然它们需要选项描述组件的一些支持，但额外的复杂性是可以容忍的。
+
++ 在命令行上指定的名称可能与选项的名称不同: 为一个较长的名称提供一个 "短选项名称 "的别名是很常见的。允许在命令行上指定一个缩写的名字也很常见。
++ 有时，将值指定为几个标记也是可取的。例如，一个选项"--email-recipient "后面可能有几个email，每个都是一个单独的命令行标记。这种行为是被支持的，尽管它可能会导致解析上的歧义，而且默认情况下不启用。
++ 命令行可能包含位置选项: 没有任何名称的元素。命令行分析器提供了一个机制来猜测这些选项的名称，正如上面看到的那样。
+
+## 存储组件
+
+一个存储组件的功能是:
+
++ 将一个选项的最终值存储到一个特殊的类和常规变量中
++ 解决不同输入源的优先级问题
++ 使用选项的最终值调用用户指定的`notify`函数
+
+考虑下面的例子:
+
+```cpp
+variables_map vm;
+store(parse_command_line(argc, argv, desc), vm);
+store(parse_config_file("example.cfg", desc), vm);
+notify(vm);
+```
+
+`variables_map`用于存储选项的值. 上述代码中对`store`的两次调用将在命令行和配置文件中找到的选项加入`vm`. 最终调用`notify`函数来执行用户指定的notify函数, 并在需要的时候将结果存入常规的变量中.
+
+优先级的问题被以一个简单的方式解决: 如果一个选项已经被赋予了一个值, 那么`store`函数不会覆盖这个值. 在这样的前提下, 如果命令行已经指定了一个选项的值, 那么配置文件中关于这个选项的任何值都会被忽略. 
+
+## 额外补充
+
+### 具体的分析器
+
+#### 配置文件分析器
+
+`parse_config_file`函数实现了一个简单的类 INI 配置文件的分析器. 配置文件的语法是基于行的:
+
++ 像这样的一行将一个值赋给一个选项:
+
+    ```ini
+    name=value
+    ```
+
++ 像这样的一行介绍配置文件的一个分区(section):
+
+    ```ini
+    [section name]
+    ```
+
++ `#`符号代表从该符号开始直至行尾的注释
+
+选项名与分区名关联, 例如:
+
+```ini
+[gui.accessibility]
+visual_bell=yes
+```
+
+等同于:
+
+```ini
+gui.accessibility.visual_bell=yes
+```
+
+所以在代码中加入选项是这样的:
+
+```cpp
+options_description desc;
+desc.add_options()
+    ("gui.accessibility.visual_bell", value<string>(), "flash screen for bell")
+    ;    
+```
+
+#### 环境变量分析器
+
+环境变量是字符串变量，所有程序都可以通过C语言运行库的`getenv`函数获得环境变量。
+
+操作系统允许为一个给定的用户设置初始值，并且可以在命令行上进一步改变这些值。例如，在Windows中可以使用autoexec.bat文件, 在Unix中可以使用/etc/profile、~/.profile和~/.bash_profile文件。
+
+因为环境变量可以为整个系统进行设置，所以它们特别适用于适用于所有程序的选项。
+
+环境变量可以用`parse_environment`函数进行解析。该函数有几个重载版本。第一个参数总是一个`options_description`实例，第二个参数指定哪些变量必须被处理，以及哪些选项名称必须与之对应。为了描述第二个参数，我们需要考虑环境变量的命名规则。
+
+如果你有一个应该通过环境变量指定的选项，你需要编造变量的名字。
+
++ 为了避免名称冲突，我们建议你为环境变量使用一个足够独特的前缀。
+
++ 另外，虽然选项名称很可能是小写的，但环境变量习惯上使用大写。
+
+因此，对于一个选项名称代理，环境变量可能被称为`BOOST_PROXY`。在解析过程中，我们需要对这些名称进行反向转换。这是通过将选择的前缀作为`parse_environment`函数的第二个参数来完成的。比如说，如果你传递`BOOST_`作为前缀，而有两个变量，`CVSROOT`和`BOOST_PROXY`，第一个变量将被忽略，第二个变量将被转换为选项代理。
+
+上述方案在很多情况下是足够的，但也可以作为`parse_environment`函数的第二个参数，传递任何接受`std::string`并返回`std::string`的函数。该函数将为每个环境变量被调用，并应返回选项的名称，或在变量被忽略时返回空字符串。
+
+```cpp
+// Copyright Thomas Kent 2016
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
+
+#include <string>
+#include <iostream>
+
+std::string mapper(std::string env_var) {
+  // ensure the env_var is all caps
+  std::transform(env_var.begin(), env_var.end(), env_var.begin(), ::toupper);
+
+  if (env_var == "PATH") return "path";
+  if (env_var == "EXAMPLE_VERBOSE") return "verbosity";
+  return "";
+}
+
+void get_env_options() {
+  po::options_description config("Configuration");
+  config.add_options()
+          ("path", "the execution path")
+          ("verbosity", po::value<std::string>()->default_value("INFO"),
+           "set verbosity: DEBUG, INFO, WARN, ERROR, FATAL");
+
+  po::variables_map vm;
+  // 对于每一个环境变量(value), 都调用函数对象(封装了 mapper)来获取它的名称(name)
+  // 如果返回了一个非空字符串, 那么就将其记入variables_map
+  // 否则将其丢弃
+  store(po::parse_environment(config, boost::function1<std::string, std::string>(mapper)), vm);
+  notify(vm);
+
+  if (vm.count("path")) {
+    std::cout << "First 75 chars of the system path: \n";
+    std::cout << vm["path"].as<std::string>().substr(0, 75) << std::endl;
+  }
+
+  std::cout << "Verbosity: " << vm["verbosity"].as<std::string>() << std::endl;
+}
+
+int main(int ac, char *av[]) {
+  get_env_options();
+
+  return 0;
+}
+```
+
+### 类型
+
+所有在命令行、环境变量或配置文件中传入的东西都是字符串。对于需要作为非字符串类型的值，`variables_map`中的值会尝试将其转换为正确的类型。
+
+整数和浮点值会使用Boost的`lexical_cast`进行转换。
+
+它将接受整数值，如 "41 "或"-42"。
+
+它将接受十进制下的浮点值, 无论是科学计数法还是常见的浮点数表示法.
+
+但是，C++中可用的十六进制、八进制和二进制表示法不被`lexical_cast`支持，因此将不能与`program_options`一起使用。
