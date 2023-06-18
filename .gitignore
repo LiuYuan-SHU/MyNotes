@@ -17,3 +17,6 @@ Crawler with Python3/Python3 web crawler development practice（Edition2） - Cu
 **/a.out
 **/*.dSYM
 Crawler with Python3/Python3网络爬虫开发实战/.DS_Store
+*.json
+.obsidian/core-plugins.json
+.obsidian/graph.json
