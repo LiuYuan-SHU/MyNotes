@@ -259,8 +259,10 @@ ADD_SUBDIRECTORY(source_dir [binary_dir] [EXCLUDE_FROM_ALL])
 
 SET 指令重新定义 EXECUTABLE_OUTPUT_PATH 和 LIBRARY_OUTPUT_PATH 变量 来指定最终的目标二进制的位置
 
+```cmake
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+```
 
 思考：加载哪个CMakeLists.txt当中
 
