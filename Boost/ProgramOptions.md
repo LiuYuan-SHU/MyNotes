@@ -872,3 +872,888 @@ int main(int ac, char *av[]) {
 它将接受十进制下的浮点值, 无论是科学计数法还是常见的浮点数表示法.
 
 但是，C++中可用的十六进制、八进制和二进制表示法不被`lexical_cast`支持，因此将不能与`program_options`一起使用。
+
+# 特定情形下的例子
+
+## 非常见语法
+
+有的时候, 标准的命令行语法并不够. 例如, gcc 编译器有"-frtti"和"-fno-rtti"选项, 这些选项并没有被直接支持.
+
+对于这样的情况, program options 库允许用户提供一个额外的解析器. 在命令行中的每个元素被 program options 库解析之前, 这个额外的解析都可以被调用. 如果这个解析器在元素中检测到了对应的语法, 那么它就会返回可以被直接使用的这个选项的名字和值. 例如:
+
+```cpp
+pair<string, string> reg_foo(const string& s)
+{
+    if (s.find("-f") == 0) {
+        if (s.substr(2, 3) == "no-")
+            return make_pair(s.substr(5), string("false"));
+        else
+            return make_pair(s.substr(2), string("true"));
+    } else {
+        return make_pair(string(), string());
+    }
+}
+```
+
+以下是额外解析器的定义. 当我们解析命令行的时候, 我们会传入额外解析器:
+
+```cpp
+store(command_line_parser(ac, av).options(desc).extra_parser(reg_foo)
+        .run(), vm);
+```
+
+以下是完整的例子:
+
+```cpp
+// Copyright Vladimir Prus 2002-2004.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+/** This example shows how to support custom options syntax.
+
+    It's possible to install 'custom_parser'. It will be invoked on all command
+    line tokens and can return name/value pair, or nothing. If it returns
+    nothing, usual processing will be done.
+*/
+
+
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
+
+using namespace boost::program_options;
+
+#include <iostream>
+using namespace std;
+
+/*  This custom option parse function recognize gcc-style
+    option "-fbar" / "-fno-bar".
+*/
+pair<string, string> reg_foo(const string& s)
+{
+    if (s.find("-f") == 0) {
+        if (s.substr(2, 3) == "no-")
+            return make_pair(s.substr(5), string("false"));
+        else
+            return make_pair(s.substr(2), string("true"));
+    } else {
+        return make_pair(string(), string());
+    }
+}
+
+int main(int ac, char* av[])
+{
+    try {
+        options_description desc("Allowed options");
+        desc.add_options()
+        ("help", "produce a help message")
+        ("foo", value<string>(), "just an option")
+        ;
+
+        variables_map vm;
+        store(command_line_parser(ac, av).options(desc).extra_parser(reg_foo)
+              .run(), vm);
+
+        if (vm.count("help")) {
+            cout << desc;
+            cout << "\nIn addition -ffoo and -fno-foo syntax are recognized.\n";
+        }
+        if (vm.count("foo")) {
+            cout << "foo value with the value of "
+                 << vm["foo"].as<string>() << "\n";
+        }
+    }
+    catch(exception& e) {
+        cout << e.what() << "\n";
+    }
+}
+```
+
+## 响应文件 - Response File
+
+有些操作系统对命令行的长度有限制. 绕过这些限制的常用方法是使用响应文件. 响应文件是一个使用了与命令行相同语法的文件. 如果命令行中指定了响应文件的路径, 那么响应文件就会被当做命令行剩余的部分被加载和解析. 
+
+program options 没有对响应文件提供直接的支持, 所以我们需要自己写一点代码.
+
+1. 首先 要定义一个针对响应文件的选项:
+
+    ```cpp
+    ("response-file", value<string>(),
+         "can be specified with '@name', too")
+    ```
+
+2. 然后需要一个额外的分析器来支持指定响应文件的标准语法
+
+    ```cpp
+    pair<string, string> at_option_parser(string const&s)
+    {
+        if ('@' == s[0])
+            return std::make_pair(string("response-file"), s.substr(1));
+        else
+            return pair<string, string>();
+    }
+    ```
+
+3. 最后, 每当"response-file"选项被找到, 我们就需要加载文件, 同时将其传递给命令行分析器. 这是最难的一部分, 我们会需要用到 Boost.Tokenizer 库, 它能够正常使用, 但是会有一些限制. 或者是考虑使用Boost.StringAlgo. 代码如下:
+
+    ```cpp
+    if (vm.count("response-file")) {
+         // Load the file and tokenize it
+         ifstream ifs(vm["response-file"].as<string>().c_str());
+         if (!ifs) {
+             cout << "Could not open the response file\n";
+             return 1;
+         }
+         // Read the whole file into a string
+         stringstream ss;
+         ss << ifs.rdbuf();
+         // Split the file content
+         char_separator<char> sep(" \n\r");
+         std::string ResponsefileContents( ss.str() );
+         tokenizer<char_separator<char> > tok(ResponsefileContents, sep);
+         vector<string> args;
+         copy(tok.begin(), tok.end(), back_inserter(args));
+         // Parse the file and store the options
+         store(command_line_parser(args).options(desc).run(), vm);
+    }
+    ```
+
+完整代码如下:
+
+```cpp
+// Copyright Vladimir Prus 2002-2004.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+/** This example shows how to handle response file.
+
+    For a test, build and run:
+       response_file -I foo @response_file.rsp
+
+    The expected output is:
+      Include paths: foo bar biz
+
+    Thanks to Hartmut Kaiser who raised the issue of response files
+    and discussed the possible approach.
+*/
+
+
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/token_functions.hpp>
+using namespace boost;
+using namespace boost::program_options;
+
+#include <iostream>
+#include <fstream>
+using namespace std;
+
+// Additional command line parser which interprets '@something' as a
+// option "config-file" with the value "something"
+pair<string, string> at_option_parser(string const&s)
+{
+    if ('@' == s[0])
+        return std::make_pair(string("response-file"), s.substr(1));
+    else
+        return pair<string, string>();
+}
+
+int main(int ac, char* av[])
+{
+    try {
+        options_description desc("Allowed options");
+        desc.add_options()
+            ("help", "produce a help message")
+            ("include-path,I", value< vector<string> >()->composing(),
+                 "include path")
+            ("magic", value<int>(), "magic value")
+            ("response-file", value<string>(),
+                 "can be specified with '@name', too")
+        ;
+
+        variables_map vm;
+        store(command_line_parser(ac, av).options(desc)
+              .extra_parser(at_option_parser).run(), vm);
+
+        if (vm.count("help")) {
+            cout << desc;
+        }
+        if (vm.count("response-file")) {
+            // Load the file and tokenize it
+            ifstream ifs(vm["response-file"].as<string>().c_str());
+            if (!ifs) {
+                cout << "Could not open the response file\n";
+                return 1;
+            }
+            // Read the whole file into a string
+            stringstream ss;
+            ss << ifs.rdbuf();
+            // Split the file content
+            char_separator<char> sep(" \n\r");
+            string sstr = ss.str();
+            tokenizer<char_separator<char> > tok(sstr, sep);
+            vector<string> args;
+            copy(tok.begin(), tok.end(), back_inserter(args));
+            // Parse the file and store the options
+            store(command_line_parser(args).options(desc).run(), vm);
+        }
+
+        if (vm.count("include-path")) {
+            const vector<string>& s = vm["include-path"].as<vector< string> >();
+            cout << "Include paths: ";
+            copy(s.begin(), s.end(), ostream_iterator<string>(cout, " "));
+            cout << "\n";
+        }
+        if (vm.count("magic")) {
+            cout << "Magic value: " << vm["magic"].as<int>() << "\n";
+        }
+    }
+    catch (std::exception& e) {
+        cout << e.what() << "\n";
+    }
+}
+```
+
+以下是response_file.rsp
+
+```
+-I bar
+-I biz
+--magic 10
+```
+
+## Winmain 命令行
+
+在Windows操作系统上，GUI应用程序接收的命令行是一个单一的字符串，而不是被分割成多个元素。由于这个原因，不能直接使用命令行解析器。至少在一些编译器上，有可能获得分割的命令行，但不清楚是否所有的编译器在所有版本的操作系统上都支持同样的机制。
+
+基于这个原因, program options 函数提供了可移植的`split_winmain` 函数.
+
+```cpp
+vector<string> args = split_winmain(lpCmdLine);
+store(command_line_parser(args).options(desc).run(), vm);
+```
+
+`split_winmain`函数对`wchar_t`字符串进行了重载，因此也可用于Unicode应用程序。
+
+## 选项组与隐藏选项
+
+将整个程序的所有选项放在一个`options_description`类里面存在一些问题:
+
++ 有的选项只针对特定的输入源有用, 例如配置文件
++ 用户可能希望生成的帮助信息有结构
++ 有些选项完全不应该出现在帮助信息中
+
+要解决上面提到的问题, program options 允许创建`options_description`类的多个实例, 他们可以依照不同的方式合并. 
+
+下面的例子定义了三个选项组: 一个指定了通过命令行生效的选项, 剩下的两个指定了程序的模式. 只有一个会在生成的帮助信息中显示.
+
+每一个选项组都是用标准的语法声明, 但是, 你需要给每一个选项组一个合理的名字:
+
+```cpp
+options_description general("General options");
+general.add_options()
+    ("help", "produce a help message")
+    ("help-module", value<string>(),
+        "produce a help for a given module")
+    ("version", "output the version number")
+    ;
+
+options_description gui("GUI options");
+gui.add_options()
+    ("display", value<string>(), "display to use")
+    ;
+
+options_description backend("Backend options");
+backend.add_options()
+    ("num-threads", value<int>(), "the initial number of threads")
+    ;
+```
+
+在声明选项组之后, 就可以将他们合并到一起. 首先会将所有的选项都包含, 用于分析; 其次会被用于显示帮助信息:
+
+```cpp
+// Declare an options description instance which will include
+// all the options
+options_description all("Allowed options");
+all.add(general).add(gui).add(backend);
+
+// Declare an options description instance which will be shown
+// to the user
+options_description visible("Allowed options");
+visible.add(general).add(gui);
+```
+
+剩下的就是分析和处理选项了:
+
+```cpp
+variables_map vm;
+store(parse_command_line(ac, av, all), vm);
+
+if (vm.count("help"))
+{
+    cout << visible;
+    return 0;
+}
+if (vm.count("help-module")) {
+    const string& s = vm["help-module"].as<string>();
+    if (s == "gui") {
+        cout << gui;
+    } else if (s == "backend") {
+        cout << backend;
+    } else {
+        cout << "Unknown module '"
+             << s << "' in the --help-module option\n";
+        return 1;
+    }
+    return 0;
+}
+if (vm.count("num-threads")) {
+    cout << "The 'num-threads' options was set to "
+         << vm["num-threads"].as<int>() << "\n";
+}
+```
+
+在解析命令行的时候, 所有的选项都是允许的. 但是帮助信息并不会包含"Backend options"选项组, 这个选项组被隐藏了. 用户只能显式地调用"--help-module backend"选项来强制打印这部分帮助信息. 以下是完整的示例:
+
+```cpp
+// Copyright Vladimir Prus 2002-2004.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+/** This example shows how to handle options groups.
+
+    For a test, run:
+
+    option_groups --help
+    option_groups --num-threads 10
+    option_groups --help-module backend
+
+    The first invocation would show to option groups, and will not show the
+    '--num-threads' options. The second invocation will still get the value of
+    the hidden '--num-threads' option. Finally, the third invocation will show
+    the options for the 'backend' module, including the '--num-threads' option.
+
+*/
+
+
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/token_functions.hpp>
+using namespace boost;
+using namespace boost::program_options;
+
+#include <iostream>
+#include <fstream>
+#include <exception>
+using namespace std;
+
+int main(int ac, char* av[])
+{
+    try {
+        // Declare three groups of options.
+        options_description general("General options");
+        general.add_options()
+            ("help", "produce a help message")
+            ("help-module", value<string>(),
+                "produce a help for a given module")
+            ("version", "output the version number")
+            ;
+
+        options_description gui("GUI options");
+        gui.add_options()
+            ("display", value<string>(), "display to use")
+            ;
+
+        options_description backend("Backend options");
+        backend.add_options()
+            ("num-threads", value<int>(), "the initial number of threads")
+            ;
+
+        // Declare an options description instance which will include
+        // all the options
+        options_description all("Allowed options");
+        all.add(general).add(gui).add(backend);
+
+        // Declare an options description instance which will be shown
+        // to the user
+        options_description visible("Allowed options");
+        visible.add(general).add(gui);
+
+
+        variables_map vm;
+        store(parse_command_line(ac, av, all), vm);
+
+        if (vm.count("help"))
+        {
+            cout << visible;
+            return 0;
+        }
+        if (vm.count("help-module")) {
+            const string& s = vm["help-module"].as<string>();
+            if (s == "gui") {
+                cout << gui;
+            } else if (s == "backend") {
+                cout << backend;
+            } else {
+                cout << "Unknown module '"
+                     << s << "' in the --help-module option\n";
+                return 1;
+            }
+            return 0;
+        }
+        if (vm.count("num-threads")) {
+            cout << "The 'num-threads' options was set to "
+                 << vm["num-threads"].as<int>() << "\n";
+        }
+    }
+    catch(std::exception& e) {
+        cout << e.what() << "\n";
+    }
+}
+```
+
+## 自定义的验证器
+
+默认情况下, 将选项的值从字符串转换到 C++的类型是由`iostream`完成的, 但有时不是很方便. program options库允许用户针对一些特定的类自定义转换方式. 为了实现这样的功能, 用户需要提供一些合适的`validate`函数的重载.
+
+首先需要定义一个简单的类:
+
+```cpp
+struct magic_number {
+public:
+    magic_number(int n) : n(n) {}
+    int n;
+};
+```
+
+然后重载`validate`函数:
+
+```cpp
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              magic_number* target_type, int)
+{
+    static regex r("\\d\\d\\d-(\\d\\d\\d)");
+
+    using namespace boost::program_options;
+
+    // Make sure no previous assignment to 'a' was made.
+    validators::check_first_occurrence(v);
+    // Extract the first string from 'values'. If there is more than
+    // one string, it's an error, and exception will be thrown.
+    const string& s = validators::get_single_string(values);
+
+    // Do regex match and convert the interesting part to
+    // int.
+    smatch match;
+    if (regex_match(s, match, r)) {
+        v = any(magic_number(lexical_cast<int>(match[1])));
+    } else {
+        throw validation_error(validation_error::invalid_option_value);
+    }
+}
+```
+
+上面这个函数接受四个参数. 
+
++ 第一个是值的存储，在这种情况下，要么是空的，要么包含`magic_number`类的一个实例.
++  第二个是在选项的下一次出现时发现的字符串列表.
+
+剩下的两个参数是为了解决某些编译器上缺乏部分模板专用化和部分函数模板排序的问题。
+
+函数首先确定我们没有尝试为同一个选项赋值两次. 然后确定只有一个字符串被传入了函数. 这个字符串会在 `Boost.Regex`类的帮助下完成检查. 如果检查通过, 那么这个被解析的值就会被存储到变量`v`中.
+
+以下是完整的示例:
+
+```cpp
+// Copyright Vladimir Prus 2002-2004.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt
+// or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+// This example shows how a user-defined class can be parsed using
+// specific mechanism -- not the iostream operations used by default.
+//
+// A new class 'magic_number' is defined and the 'validate' method is overloaded
+// to validate the values of that class using Boost.Regex.
+// To test, run
+//
+//    regex -m 123-456
+//    regex -m 123-4567
+//
+// The first invocation should output:
+//
+//   The magic is "456"
+//
+// and the second invocation should issue an error message.
+
+#include <boost/program_options.hpp>
+#include <boost/regex.hpp>
+
+using namespace boost;
+using namespace boost::program_options;
+
+#include <iostream>
+using namespace std;
+
+/* Define a completely non-sensical class. */
+struct magic_number {
+public:
+    magic_number(int n) : n(n) {}
+    int n;
+};
+
+/* Overload the 'validate' function for the user-defined class.
+   It makes sure that value is of form XXX-XXX
+   where X are digits and converts the second group to an integer.
+   This has no practical meaning, meant only to show how
+   regex can be used to validate values.
+*/
+void validate(boost::any& v,
+              const std::vector<std::string>& values,
+              magic_number*, int)
+{
+    static regex r("\\d\\d\\d-(\\d\\d\\d)");
+
+    using namespace boost::program_options;
+
+    // Make sure no previous assignment to 'a' was made.
+    validators::check_first_occurrence(v);
+    // Extract the first string from 'values'. If there is more than
+    // one string, it's an error, and exception will be thrown.
+    const string& s = validators::get_single_string(values);
+
+    // Do regex match and convert the interesting part to
+    // int.
+    smatch match;
+    if (regex_match(s, match, r)) {
+        v = any(magic_number(lexical_cast<int>(match[1])));
+    } else {
+        throw validation_error(validation_error::invalid_option_value);
+    }
+}
+
+
+int main(int ac, char* av[])
+{
+    try {
+        options_description desc("Allowed options");
+        desc.add_options()
+            ("help", "produce a help screen")
+            ("version,v", "print the version number")
+            ("magic,m", value<magic_number>(),
+                 "magic value (in NNN-NNN format)")
+            ;
+
+        variables_map vm;
+        store(parse_command_line(ac, av, desc), vm);
+
+        if (vm.count("help")) {
+            cout << "Usage: regex [options]\n";
+            cout << desc;
+            return 0;
+        }
+        if (vm.count("version")) {
+            cout << "Version 1.\n";
+            return 0;
+        }
+        if (vm.count("magic")) {
+            cout << "The magic is \""
+                 << vm["magic"].as<magic_number>().n << "\"\n";
+        }
+    }
+    catch(std::exception& e)
+    {
+        cout << e.what() << "\n";
+    }
+}
+```
+
+## Unicode 字符集支持
+
+要在 Unicode 字符集下使用 program options 库, 你首先需要:
+
++ 使用能够解析 Unicode 输入的 Unicode 解析器
++ 为需要 Unicode 值的选项提供 Unicode 支持
+
+大多数解析器都提供了 Unicode 的版本. 例如, `parse_command_line`函数就提供了一个接收`wchar_t`字符串, 而不是普通`char`字符串的重载版本.
+
+即使有一些解析器支持 Unicode, 这不意味着你需要改变所有选项的定义. 事实上, 对很多选项来说, 例如整型选项, 这没有任何意义. 要使用 Unicode, 你首先需要有一些需要 Unicode 值的选项. 他们和普通选项的区别在于他们接收 `wchar_t` 类型的输入, 并且使用宽字符流进行处理. 
+
+创建一个支持 Unicode 的选项是很简单的: 只需要使用`wvalue`函数而不是常用的`value`函数即可.
+
+当一个 ASCII 解析器将一个值传递给 ASCII 选项, 或者是一个 Unicode 解析器将一个值传递给一个 Unicode 选项, 这个值都不会有任何的改变. 所以, ASCII 选项会以 本地的 8-bit 格式看待这个字符串, 而 Unicode 选项则会以 Unicode 格式看待这个字符串.
+
+但是如果将一个 Unicode 值传递给一个 ASCII 选项, 或者是反过来, 会发生什么? program options 库将会自动完成 Unicode 与 ASCII 之间的转换. 例如, 如果命令行是 ASCII 格式的, 但是你是用了`wchar_t`选项, 那么这个 ASCII 输入会被转换为 Unicode 格式.
+
+要完成这样的转换, program options 库会使用全局的`codecvt<wchar_t, char>`. 如果你想要以本地的 8-bit 编码来进行工作, 那么你的程序需要以下面的代码开始:
+
+```cpp
+locale::global(locale(""));
+```
+
+这段代码会根据用户设置的编码格式进行转换.
+
+不过，检查你的实现对C++语言的支持状况是明智的. 你可以使用下面的步骤来进行一个快速的检测:
+
+1. 编译下面这段代码:
+
+    minitest.hpp
+
+    ```cpp
+    #ifndef BOOST_PROGRAM_OPTIONS_MINITEST
+    #define BOOST_PROGRAM_OPTIONS_MINITEST
+    
+    #include <assert.h>
+    #include <iostream>
+    #include <stdlib.h>
+    
+    #define BOOST_REQUIRE(b) assert(b)
+    #define BOOST_CHECK(b) assert(b)
+    #define BOOST_CHECK_EQUAL(a, b) assert(a == b)
+    #define BOOST_ERROR(description) std::cerr << description; std::cerr << "\n"; abort();
+    #define BOOST_CHECK_THROW(expression, exception) \
+        try \
+        { \
+            expression; \
+            BOOST_ERROR("expected exception not thrown");\
+            throw 10; \
+        } \
+        catch(exception &) \
+        { \
+        }
+    
+    
+    
+    #endif
+    ```
+
+    
+
+    ```cpp
+    // Copyright Vladimir Prus 2002-2004.
+    // Distributed under the Boost Software License, Version 1.0.
+    // (See accompanying file LICENSE_1_0.txt
+    // or copy at http://www.boost.org/LICENSE_1_0.txt)
+    
+    #include <cstring>
+    #include <cassert>
+    #include <string>
+    #include <fstream>
+    #include <sstream>
+    #include <iostream>
+    #include <boost/progress.hpp>
+    #include <boost/bind.hpp>
+    #include <boost/ref.hpp>
+    
+    #include <boost/program_options/detail/convert.hpp>
+    #include <boost/program_options/detail/utf8_codecvt_facet.hpp>
+    
+    #include "minitest.hpp"
+    
+    using namespace std;
+    
+    string file_content(const string& filename)
+    {
+        ifstream ifs(filename.c_str());
+        assert(ifs);
+    
+        stringstream ss;
+        ss << ifs.rdbuf();
+    
+        return ss.str();
+    }
+    
+    // A version of from_8_bit which does not use functional object, for
+    // performance comparison.
+    std::wstring from_8_bit_2(const std::string& s,
+                              const codecvt<wchar_t, char, mbstate_t>& cvt)
+    {
+        std::wstring result;
+    
+    
+        std::mbstate_t state = std::mbstate_t();
+    
+        const char* from = s.data();
+        const char* from_end = s.data() + s.size();
+        // The interace of cvt is not really iterator-like, and it's
+        // not possible the tell the required output size without the conversion.
+        // All we can is convert data by pieces.
+        while(from != from_end) {
+    
+            // std::basic_string does not provide non-const pointers to the data,
+            // so converting directly into string is not possible.
+            wchar_t buffer[32];
+    
+            wchar_t* to_next = buffer;
+            // Try to convert remaining input.
+            std::codecvt_base::result r =
+                cvt.in(state, from, from_end, from, buffer, buffer + 32, to_next);
+    
+            if (r == std::codecvt_base::error)
+                throw logic_error("character conversion failed");
+            // 'partial' is not an error, it just means not all source characters
+            // we converted. However, we need to check that at least one new target
+            // character was produced. If not, it means the source data is
+            // incomplete, and since we don't have extra data to add to source, it's
+            // error.
+            if (to_next == buffer)
+                throw logic_error("character conversion failed");
+    
+            // Add converted characters
+            result.append(buffer, to_next);
+        }
+    
+        return result;
+    }
+    
+    
+    void test_convert(const std::string& input,
+                      const std::string& expected_output)
+    {
+        boost::program_options::detail::utf8_codecvt_facet facet;
+    
+        std::wstring output;
+        {
+            boost::progress_timer t;
+            for (int i = 0; i < 10000; ++i)
+                output = boost::from_8_bit(
+                    input,
+                    facet);
+        }
+    
+        {
+            boost::progress_timer t;
+            for (int i = 0; i < 10000; ++i)
+                output = from_8_bit_2(
+                    input,
+                    facet);
+        }
+    
+        BOOST_CHECK(output.size()*2 == expected_output.size());
+    
+        for(unsigned i = 0; i < output.size(); ++i) {
+    
+            {
+                unsigned low = output[i];
+                low &= 0xFF;
+                unsigned low2 = expected_output[2*i];
+                low2 &= 0xFF;
+                BOOST_CHECK(low == low2);
+            }
+            {
+                unsigned high = output[i];
+                high >>= 8;
+                high &= 0xFF;
+                unsigned high2 = expected_output[2*i+1];
+                BOOST_CHECK(high == high2);
+            }
+        }
+    
+        string ref = boost::to_8_bit(output, facet);
+    
+        BOOST_CHECK(ref == input);
+    }
+    
+    int main(int ac, char* av[])
+    {
+        std::string input = file_content("utf8.txt");
+        std::string expected = file_content("ucs2.txt");
+    
+        test_convert(input, expected);
+    
+        if (ac > 1) {
+            cout << "Trying to convert the command line argument\n";
+    
+            locale::global(locale(""));
+            std::wstring w = boost::from_local_8_bit(av[1]);
+    
+            cout << "Got something, printing decimal code point values\n";
+            for (unsigned i = 0; i < w.size(); ++i) {
+                cout << (unsigned)w[i] << "\n";
+            }
+    
+        }
+    
+        return 0;
+    }
+    ```
+
+2. 在环境中设置一些非 ASCII 值, 例如:
+
+    ```shell
+    export LC_CTYPE=ru_RU.KOI8-R
+    ```
+
+3. 运行上面的测试代码，以所选编码的任何非ascii字符串作为其参数。如果你看到一个Unicode编码点的列表，那么一切都很好。否则，你系统上的语言支持可能被破坏了。
+
+## 允许未知的选项
+
+通常情况下，program options 库对未知的选项名称会抛出一个异常。这种行为可以被改变。例如，你的应用程序中只有一部分使用 program_options库，而你希望将不被识别的选项传递给程序的另一部分，甚至传递给另一个应用程序。
+
+要允许命令行上的未注册选项，你需要使用`basic_command_line_parser`类进行解析（而不是`parse_command_line`）并调用该类的`allow_unregistered`方法：
+
+```cpp
+parsed_options parsed =
+    command_line_parser(argc, argv).options(desc).allow_unregistered().run();
+```
+
+对于每个看起来像选项，但没有已知名称的标记，将在结果中添加一个`basic_option`的实例。实例的`string_key`和`value`字段将包含该标记的语法解析结果，`unregistered`字段将被设置为`true`，而`original_tokens`字段将包含该标记在命令行中出现的样子。
+
+如果你想进一步传递未识别的选项，可以使用 `collect_unrecognized` 函数。该函数将收集所有未被识别的值的原始标记，并可选择收集所有发现的位置选项。
+
+比方说，如果你的代码处理了一些选项，但完全没有处理位置选项，你可以这样使用这个函数：
+
+```cpp
+vector<string> to_pass_further = collect_unrecognized(parsed.options, include_positional);
+```
+
+## 测试选项是否存在
+
+到目前为止，我们使用`variables_map`类上的`count`方法来测试一个选项是否已经被设置；由于你在重复选项的字符串名称，这很容易出现打字错误或在一个地方重命名选项而在另一个地方不重命名而导致错误：
+
+```cpp
+po::options_description desc("Allowed options");
+desc.add_options()
+    ("compression", po::value<int>(), "set compression level")
+;
+
+po::variables_map vm;
+po::store(po::parse_command_line(ac, av, desc), vm);
+po::notify(vm);
+
+if (vm.count("compression")) {
+    cout << "Compression level was set to "
+ << vm["compression"].as<int>() << ".\n";
+} else {
+    cout << "Compression level was not set.\n";
+}
+```
+
+相反，你可以使用一个`boost::option`类型的变量；program_options库为`Boost.Optional`提供了特殊支持，这样如果用户指定了选项，`boost::option`变量就会被初始化为相应的值：
+
+```cpp
+po::options_description desc("Allowed options");
+boost::optional<int> compression;
+desc.add_options()
+    ("compression", po::value(&compression), "set compression level")
+;
+
+po::variables_map vm;
+po::store(po::parse_command_line(ac, av, desc), vm);
+po::notify(vm);
+
+if (compression) {
+    cout << "Compression level was set to " << *compression << ".\n";
+} else {
+    cout << "Compression level was not set.\n";
+}
+```
+
