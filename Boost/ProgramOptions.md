@@ -2,6 +2,15 @@
 
 [TOC]
 
+# CMake 加载
+
+```cmake
+find_package(Boost REQUIRED COMPONENTS
+        program_options)
+include_directories(${BOOST_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::program_options)
+```
+
 # 样例
 
 ## quick start - first.cpp
