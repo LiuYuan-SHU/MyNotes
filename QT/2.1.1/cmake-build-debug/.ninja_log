@@ -1,0 +1,19 @@
+# ninja log v5
+1	10	0	CMakeFiles/clean.additional	a6b4b0ec4cb78dcb
+10	14	0	clean	3c8e6cc385ee00ba
+0	226	1687870055169244511	/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/cmake-build-debug/2_1_1_autogen/timestamp	c59f12e4da123fb9
+0	226	1687870055169244511	2_1_1_autogen/mocs_compilation.cpp	c59f12e4da123fb9
+0	226	1687870055169244511	/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/cmake-build-debug/2_1_1_autogen/mocs_compilation.cpp	c59f12e4da123fb9
+0	226	1687870055169244511	2_1_1_autogen/timestamp	c59f12e4da123fb9
+226	722	1687870055668746391	CMakeFiles/2_1_1.dir/2_1_1_autogen/mocs_compilation.cpp.o	5951afcead6d510b
+227	247	1687870055196470069	CMakeFiles/2_1_1.dir/main.cpp.o	c84791986bff31cf
+739	851	1687870055800020844	2_1_1.app/Contents/MacOS/2_1_1	4c7bc19db1bcf40d
+178	666	1687943201306404215	CMakeFiles/2.1.1.dir/2.1.1_autogen/mocs_compilation.cpp.o	4e3cd868d4484733
+227	738	1687870055685549485	CMakeFiles/2_1_1.dir/mainwindow.cpp.o	594ab3a2d2257e09
+9	62	1687943713136206913	/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/cmake-build-debug/2.1.1_autogen/timestamp	de13cc380b56785c
+39	545	1687943257515926963	CMakeFiles/2.1.1.dir/main.cpp.o	8c5aa3964e3b9738
+9	62	1687943713136206913	/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/cmake-build-debug/2.1.1_autogen/mocs_compilation.cpp	de13cc380b56785c
+9	62	1687943713136206913	2.1.1_autogen/mocs_compilation.cpp	de13cc380b56785c
+9	62	1687943713136206913	2.1.1_autogen/timestamp	de13cc380b56785c
+65	600	1687943713670781871	CMakeFiles/2.1.1.dir/mainwindow.cpp.o	4f9e49c191cea438
+600	708	1687943713780344512	2.1.1.app/Contents/MacOS/2.1.1	899e362b696afc8c
