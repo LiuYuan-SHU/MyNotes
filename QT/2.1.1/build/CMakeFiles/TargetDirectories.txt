@@ -1,8 +1,0 @@
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/2_1_1.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/edit_cache.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/rebuild_cache.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/list_install_components.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/install.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/install/local.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/install/strip.dir
-/Users/liuyuan/Liuyuan/GithubRepositories/1_MyNotes/QT/2.1.1/build/CMakeFiles/2_1_1_autogen.dir
